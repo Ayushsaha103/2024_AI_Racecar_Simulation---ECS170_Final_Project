@@ -41,6 +41,10 @@ class Car(pygame.sprite.Sprite):
         self.yaw = yaw
         self.v = v
         self.pedals.reset()
+
+    # TODO
+    def get_data(self):
+        pass
     
     # update the car position so as to maintain const. velocity
     def pidv(self, vset, delta):

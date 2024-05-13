@@ -9,6 +9,14 @@ from Constants import *
 # this variable adjusts how far ahead the waypoint is of the car
 lane_pts_ahead = 14
 
+# TODO:
+# - rename "WayPoints" class to "Waypoint"
+# - create new class "WayPoints", which consists of a list of "WayPoint" objects
+# ---> fix the updating mechanism for this WayPoints class
+# ---> create function get_data() to return the curvatures or positions of upcoming WayPoint objs ahead of car
+
+
+
 # waypoints class
 class WayPoints():
     # initialization
@@ -29,14 +37,15 @@ class WayPoints():
     
     # update waypoint position
     def update(self, rd, car):
-        # conditionally update the lane which is to be followed
-        if random.randint(0,20) == 0:
-            if random.randint(0,1) == 0:
-                if self.lanum + 2 in rd.lanums:
-                    self.lanum += 1
-            else:
-                if self.lanum - 1 >= 1:
-                    self.lanum -= 1
+        # # conditionally update the lane which is to be followed
+        # if random.randint(0,20) == 0:
+        #     if random.randint(0,1) == 0:
+        #         if self.lanum + 2 in rd.lanums:
+        #             self.lanum += 1
+        #     else:
+        #         if self.lanum - 1 >= 1:
+        #             self.lanum -= 1
+        
         # get the two surrounding lanelines (l1 & l2) of our chosen lane
         l1 = rd.lanes[ rd.lanums[self.lanum][0] ]
         l2 = rd.lanes[ rd.lanums[self.lanum][1] ]

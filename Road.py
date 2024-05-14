@@ -71,7 +71,7 @@ class LaneLine():
 # road class
 class Road():
     # initialization
-    def __init__(self, nlanes=10, npoints=70):
+    def __init__(self, nlanes=4, npoints=70):
         # lanes = array of laneline objects
         self.lanes = [LaneLine(npoints) for i in range(nlanes + 1)]
         self.lanes[0] = LaneLine(npoints, status='main')        # lanes[0] = center laneline

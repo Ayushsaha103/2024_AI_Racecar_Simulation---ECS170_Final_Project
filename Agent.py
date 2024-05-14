@@ -43,7 +43,7 @@ class Car(pygame.sprite.Sprite):
         self.pedals.reset()
 
     # TODO
-    def get_data(self):
+    def get_data(self, wp):
         pass
     
     # update the car position so as to maintain const. velocity

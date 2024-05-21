@@ -6,7 +6,7 @@ import numpy as np
 
 
 ################################################################################################
-# Helper funcs
+# agent
 ################################################################################################
 
 # normalize an angle to [-pi, pi]
@@ -23,31 +23,6 @@ def normalize_angle(angle):
         angle += 2.0 * np.pi
 
     return angle
-
-def convert_to_speed_vector(v, yaw_rad):
-    #yaw_rad = math.radians(yaw)
-    x_speed = v * math.cos(yaw_rad)
-    y_speed = v * math.sin(yaw_rad)
-    
-    return x_speed, y_speed
-
-def estimate_average_dxdt(angle_values):
-    if len(angle_values) < 2: return 0
-
-    # Calculate the change in angle over time
-    d_angle_dt = np.diff(angle_values)
-    
-    # Check if angle wraps around from 2pi to 0
-    for i in range(len(d_angle_dt)):
-        if d_angle_dt[i] > np.pi:
-            d_angle_dt[i] -= 2*np.pi
-        elif d_angle_dt[i] < -np.pi:
-            d_angle_dt[i] += 2*np.pi
-    
-    # Calculate the average value of d_angle/dt
-    avg_d_angle_dt = np.mean(d_angle_dt)
-    
-    return avg_d_angle_dt
 
 # PID controller
 class PID:
@@ -83,3 +58,21 @@ class PID:
     # set k constants of PID controller
     def set_ks(obj, kp, ki, kd):
         obj.kp = kp; obj.ki = ki; obj.kd = kd
+
+# check if yaw angle is pointing opposite to vector formed by pt1 & pt2
+def is_yaw_opposite_to_vector(yaw_angle, point1, point2):
+    # Calculate the vector formed by point1 and point2
+    vector_p1p2 = np.array([point2[0] - point1[0], point2[1] - point1[1]])
+    
+    # Calculate the yaw vector
+    yaw_vector = np.array([np.cos(yaw_angle), np.sin(yaw_angle)])
+    
+    # Calculate the dot product of the yaw vector and the vector formed by point1 and point2
+    dot_product = np.dot(yaw_vector, vector_p1p2)
+    
+    # Check if the dot product is negative (angles pointing in opposite directions)
+    if dot_product < 0:
+        return True
+    else:
+        return False
+

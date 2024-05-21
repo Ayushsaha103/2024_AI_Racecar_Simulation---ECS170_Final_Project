@@ -65,12 +65,21 @@ class WayPoints():
         # choose a next index of lane lines to set waypoint position close to
         target_idx = imin + lane_pts_ahead
         if target_idx >= len(l1.points): target_idx = -1
+<<<<<<< HEAD
         self.x, self.y = self.nextx, self.nexty
         self.nextx, self.nexty = (l1.points[target_idx ][0] + l2.points[target_idx ][0]) / 2, \
                         (l1.points[target_idx ][1] + l2.points[target_idx ][1]) / 2
         self.s += 1
+=======
+        self.x, self.y = (l1.points[target_idx ][0] + l2.points[target_idx ][0]) / 2, \
+                        (l1.points[target_idx ][1] + l2.points[target_idx ][1]) / 2
+>>>>>>> master
 
     # draw waypoint on screen
     def draw(self, screen, x_trans, y_trans):
         pygame.draw.circle(screen, RED, (self.x + x_trans, self.y + y_trans), 3)  # Draw a single pixel
+<<<<<<< HEAD
     
+=======
+    
+>>>>>>> master

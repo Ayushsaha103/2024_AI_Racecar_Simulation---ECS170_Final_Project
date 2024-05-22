@@ -104,8 +104,4 @@ class Car(pygame.sprite.Sprite):
         if is_yaw_opposite_to_vector(self.yaw, lmid.points[imid], lmid.points[imid+1]):
             return True
 
-<<<<<<< HEAD
         return False
-=======
-        return False
->>>>>>> master

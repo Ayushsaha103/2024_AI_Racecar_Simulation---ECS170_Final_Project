@@ -29,8 +29,12 @@ class WayPoints():
         # initial (x,y) coordinate of waypoint
         self.x, self.y = (l1.points[lane_pts_ahead ][0] + l2.points[lane_pts_ahead ][0]) / 2, \
                 (l1.points[lane_pts_ahead ][1] + l2.points[lane_pts_ahead ][1]) / 2
-        self.nextx, self.nexty = (l1.points[2 * lane_pts_ahead ][0] + l2.points[2 * lane_pts_ahead ][0]) / 2, \
-                (l1.points[2 * lane_pts_ahead ][1] + l2.points[2 * lane_pts_ahead ][1]) / 2
+        look1 = 2 * lane_pts_ahead 
+        self.nextx, self.nexty = (l1.points[look1 ][0] + l2.points[look1 ][0]) / 2, \
+                (l1.points[look1 ][1] + l2.points[look1 ][1]) / 2
+        look2 = min(look1 + lane_pts_ahead, len(l1.points)-1)
+        self.nextnextx, self.nextnexty = (l1.points[look2 ][0] + l2.points[look2 ][0]) / 2, \
+                (l1.points[look2 ][1] + l2.points[look2 ][1]) / 2
         self.s = 0
 
     # check if waypoint needs to be updated (occurs if car closes in on waypoint)
@@ -65,21 +69,18 @@ class WayPoints():
         # choose a next index of lane lines to set waypoint position close to
         target_idx = imin + lane_pts_ahead
         if target_idx >= len(l1.points): target_idx = -1
-<<<<<<< HEAD
         self.x, self.y = self.nextx, self.nexty
         self.nextx, self.nexty = (l1.points[target_idx ][0] + l2.points[target_idx ][0]) / 2, \
                         (l1.points[target_idx ][1] + l2.points[target_idx ][1]) / 2
+        look2 = min(target_idx + lane_pts_ahead, len(l1.points)-1)
+        self.nextnextx, self.nextnexty = (l1.points[look2 ][0] + l2.points[look2 ][0]) / 2, \
+                (l1.points[look2 ][1] + l2.points[look2 ][1]) / 2
+        
         self.s += 1
-=======
-        self.x, self.y = (l1.points[target_idx ][0] + l2.points[target_idx ][0]) / 2, \
-                        (l1.points[target_idx ][1] + l2.points[target_idx ][1]) / 2
->>>>>>> master
 
     # draw waypoint on screen
     def draw(self, screen, x_trans, y_trans):
         pygame.draw.circle(screen, RED, (self.x + x_trans, self.y + y_trans), 3)  # Draw a single pixel
-<<<<<<< HEAD
+        pygame.draw.circle(screen, BLUE, (self.nextx + x_trans, self.nexty + y_trans), 3)  # Draw a single pixel
+        pygame.draw.circle(screen, WHITE, (self.nextnextx + x_trans, self.nextnexty + y_trans), 3)  # Draw a single pixel
     
-=======
-    
->>>>>>> master

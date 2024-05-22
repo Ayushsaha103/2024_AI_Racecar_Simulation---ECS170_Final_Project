@@ -6,8 +6,8 @@ import pygame
 from pygame.locals import *
 
 import numpy as np
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 
 from Constants import *
 from Agent import *

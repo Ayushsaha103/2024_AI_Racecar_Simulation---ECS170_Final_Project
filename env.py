@@ -12,124 +12,101 @@ from gym import spaces
 from Constants import *
 from Agent import *
 from Road import *
+from Waypoints import *
+from math_helpers import angle_between_vectors, angle2vect, vectsub, normalize
 import math
 
 
 os.system('cls' if os.name == 'nt' else 'clear') # Cleaning library loading information texts
 print("Fetching Libraries.. Please Wait..")
 
-#WIDTH, HEIGHT = Constants.WIDTH, Constants.HEIGHT
-#TIME_LIMIT = Constants.TIME_LIMIT
-#BACKGROUND = Constants.BACKGROUND 
-#spriter = Constants.spriter #Image displayer
 
 
 ################################################################################################
-# Helper funcs
+# Car Env Class
 ################################################################################################
 
-def angle_between_vectors(vector1, vector2):
-    # calculate angle between vect1 and vect2
-    dot_product = sum(v1 * v2 for v1, v2 in zip(vector1, vector2))
-    magnitude1 = math.sqrt(sum(v ** 2 for v in vector1))
-    magnitude2 = math.sqrt(sum(v ** 2 for v in vector2))
-    angle_radians = math.acos(dot_product / (magnitude1 * magnitude2))
-
-    # determine whether vect2 is pointing to left/right/neither of vect1
-    cross_product = np.cross(vector1, vector2)
-    dir = -1
-    if cross_product > 0: dir = 0   # left
-    elif cross_product < 0: dir = 1     # right
-    else: dir = 2     # "Parallel or Collinear"
-
-    return 1 - (angle_radians / np.pi), dir
-
-def angle2vect(angle, magnitude=1):
-    return [magnitude*math.cos(angle), magnitude*math.sin(angle)]
-def vectsub(pt1, pt2):    # pt2 - pt1
-    return [pt2[i] - pt1[i] for i in range(len(pt2))]
-def normalize(vect):
-    magnitude = math.sqrt(sum(v ** 2 for v in vect))
-    return [ vect[i] / magnitude for i in range(len(vect)) ]
-
-
-################################################################################################
-# Drone Env Class
-################################################################################################
-
-class droneEnv(gym.Env):
+class CarEnv(gym.Env):
     def __init__(self):
-        super(droneEnv, self).__init__()
+        super(CarEnv, self).__init__()
         pygame.init()
-            # VIDEO SETTINGS
+        
+        # VIDEO SETTINGS
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.FramePerSec = pygame.time.Clock()
-        self.background = pygame.image.load(BACKGROUND)
-        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
-            # Agent and Target SETTINGS
-        self.Agent       = Drone()
-        self.Agent_image = spriter("Drone")
-        
-        self.x_target = randrange(50, WIDTH - 50)
-        self.y_target = randrange(75, HEIGHT - 75)
-        self.target   = spriter("Baloon")
-
-            # Font SETTINGS
+        # Font SETTINGS
         pygame.font.init()
         self.myfont = pygame.font.SysFont("Comic Sans MS", 20)
-        
-            # Physical CONSTANTS
+
+        # Physical CONSTANTS
         self.FPS         =  Constants.FPS
 
-            # GAME CONFIGURE
+        # GAME CONFIGURE
         self.reward = 0
         self.time   = 0
         self.pace   = 0
         self.time_limit = 20
         self.target_counter = 0
+
+        # Agent SETTINGS
+        self.Agent       = Car()
+        self.Agent_image = spriter("Car")
         
-            # GYM CONFIGURE
+        # GYM CONFIGURE
         self.action_space      = gym.spaces.Discrete(5)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float16)
         
         self.info = {}
         Constants.report(self)
         
-        # ADDED
-        self.throttle, self.delta = 0,0
-        self.rd = Road(nlanes=10)
-        self.rd.update()
+        # ADDED variables
+        self.reset()
 
+    # reset the game
     def reset(self):
-        
+        # reset car position and controlling variables
         self.Agent.reset()
-        self.x_target = randrange(50, WIDTH - 50)
-        self.y_target = randrange(75, HEIGHT - 75)
+        self.throttle, self.delta = 0,0
+        
+        # re-initialize road and waypoints objects
+        self.rd = Road(nlanes=10)           # road object
+        self.rd.update()
+        self.wp = WayPoints(self.rd)        # waypoints (target points) object
 
+        # reset general game state counters
         self.target_counter = 0
         self.reward = 0
         self.time   = 0
 
-        self.throttle, self.delta = 0,0
-        self.d_delta_dt = 0.0
-
         return self.get_obs()
 
+    # return the state of the game (so Agent knows its surroundings)
     def get_obs(self) -> np.ndarray:
-
-        angle_y, dir_y = angle_between_vectors(angle2vect(self.Agent.yaw), normalize(vectsub([self.Agent.x, self.Agent.y],[self.x_target, self.y_target])))
-        dist = sqrt((self.x_target - self.Agent.x) ** 2 + (self.y_target - self.Agent.y) ** 2) / 500
-        angle_d, dir_d = angle_between_vectors(angle2vect(normalize_angle(self.Agent.yaw + self.delta)), normalize(vectsub([self.Agent.x, self.Agent.y],[self.x_target, self.y_target])))
+        
+        # angle_y = angle between yaw vector and next waypoint
+        #           note: this angle is converted s.t. 180deg => '0', 90deg => '0.5', 0deg => '1'
+        # dir_y = (bool) is the waypoint to left/right of car's yaw vector
+        angle_y, dir_y = angle_between_vectors(angle2vect(self.Agent.yaw), normalize(vectsub([self.Agent.x, self.Agent.y],[self.wp.x, self.wp.y])))
+        
+        # dist_to_wp = distance to next waypoint
+        dist_to_wp = sqrt((self.wp.x - self.Agent.x) ** 2 + (self.wp.y - self.Agent.y) ** 2) / 500
+        
+        # angle_d = angle between wheel's direction vector and next waypoint
+        #           note: this angle is converted s.t. 180deg => '0', 90deg => '0.5', 0deg => '1'
+        # dir_d = (bool) is the waypoint to left/right of wheel's direction vector
+        angle_d, dir_d = angle_between_vectors(angle2vect(normalize_angle(self.Agent.yaw + self.delta)), normalize(vectsub([self.Agent.x, self.Agent.y],[self.wp.x, self.wp.y])))
+        
+        # car velocity
         v = self.Agent.v
 
         return np.array(
             [
-                angle_y, dir_y, dist, angle_d, dir_d, v,
+                angle_y, dir_y, dist_to_wp, angle_d, dir_d, v,
             ]
         ).astype(np.float16)
 
-
+    # single timestep update of game
     def step(self, action):
         
         self.render()
@@ -143,66 +120,51 @@ class droneEnv(gym.Env):
         for _ in range(1):
             self.time += 1 / 60
 
-                # Initialize accelerations
-            self.Agent.angular_acceleration = 0
-            self.Agent.x_acceleration       = 0
-            self.Agent.y_acceleration       = 0
-
-            if action == 0:
+            # specify agent operations for certain values of A2C's output 'action'
+            if action == 0:         # do nothing
                 self.delta = 0
             
-            elif action == 1:
+            elif action == 1:       # increase throttle force
                 self.throttle = min(max_throttle, self.throttle + 1)
 
-            elif action == 2:
+            elif action == 2:       # decrease throttle force
                 self.throttle = max(-max_throttle, self.throttle - 1)
 
-            elif action == 3:
-                self.delta = min(max_steer, self.delta + np.radians(5))
+            elif action == 3:       # increase delta angle
+                self.delta = min(max_steer, self.delta + np.radians(2))
 
-            elif action == 4:
-                self.delta = max(-max_steer, self.delta - np.radians(5))
+            elif action == 4:       # decrease delta angle
+                self.delta = max(-max_steer, self.delta - np.radians(2))
     
-            #self.Agent.pidv(10, self.delta)
-            self.throttle = self.Agent.update(self.throttle, self.delta)
-            #self.Agent.pidv(20, self.delta)
+            # UPDATE CAR POSITION
+            self.Agent.pidv(7, self.delta)        # constant speed update
+            #self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
 
-
-
-            # conditionally update road
+            # conditionally update road to next positioning (if car is about to reach the end of road)
             if self.rd.check_for_update([self.Agent.x, self.Agent.y]): self.rd.update()
             
-            ## check that car is within road bounds
-            #if c.check_bounds():
-            #    dx, dy = c.reset_pos()
-            #    self.rd.reset_pos(dx, dy)
-            #if c.check_cross_rd_bounds(self.rd):
-            #    break
+            # Euclidean distance between Agent and waypoint
+            dist_to_wp = sqrt((self.Agent.x - self.wp.x) ** 2 + (self.Agent.y - self.wp.y) ** 2)
 
-
-
-
-            # Euclidean distance between Agent and Target 
-            dist = sqrt((self.Agent.x - self.x_target) ** 2 + (self.Agent.y - self.y_target) ** 2)
-
-                # Reward per step if survived
+            # Reward per step if survived
             self.reward += 1 / 60
             
-                # Penalizing to the distance to target (0.00016 is for normalize)
-            self.reward -= dist * 0.000166 # (100*60)
+            # Penalizing to the distance to target (0.00016 is for normalize)
+            self.reward -= dist_to_wp * 0.000166 # (100*60)
 
-            # CHECKME
-            self.reward -= 0.2*(1/self.Agent.v)
+            # penalty for going slow (-=)
+            #self.reward -= (0.04/(self.Agent.v + 1))
 
-            if dist < 10:
+            # conditionally update waypoint position
+            if self.wp.check_for_update([self.Agent.x, self.Agent.y]):
                 # Reward if agent closes to target
-                self.x_target = randrange(50, WIDTH - 50)
-                self.y_target = randrange(75, HEIGHT - 75)
                 self.reward += 100
                 self.target_counter += 1
                 self.time = 0
+
+                self.wp.update(self.rd, self.Agent)
         
-            # If times up
+            # penalty if time's up
             if self.time > self.time_limit:
                 # ADDED
                 del self.rd
@@ -212,25 +174,28 @@ class droneEnv(gym.Env):
                 done = True
                 return self.get_obs(), self.reward, done, self.info
 
-            #dist > 1000: 
-            if self.Agent.x < 0 or self.Agent.x > WIDTH or \
-                self.Agent.y < 0 or self.Agent.y > HEIGHT: 
 
-                # ADDED
-                del self.rd
-                self.rd = Road(nlanes=10)
-                self.rd.update()
+            # calculate angle_y, angle_d (see get_obs() function for details on these variables)
+            angle_y, dir_y = angle_between_vectors(angle2vect(self.Agent.yaw), normalize(vectsub([self.Agent.x, self.Agent.y],[self.wp.x, self.wp.y])))
+            angle_d, dir_d = angle_between_vectors(angle2vect(normalize_angle(self.Agent.yaw + self.delta)), normalize(vectsub([self.Agent.x, self.Agent.y],[self.wp.x, self.wp.y])))
+            
+            # penalize agent for facing away from waypoint
+            self.reward -= (0.2 / angle_d)
 
+            # terminate game/penalize agent if crosses road bounds or really faces away from waypoint, or gets far from waypoint
+            if self.Agent.check_cross_rd_bounds(self.rd) or angle_y < 0.2 or dist_to_wp > 180:
+                # reset road 
+                del self.rd, self.wp
+                self.reset()
 
-                self.reward -= 800
+                self.reward -= 200
                 done = True
                 return self.get_obs(), self.reward, done, self.info
 
         return self.get_obs(), self.reward, False, self.info
-
+    
+    # render entire game to the screen
     def render(self):
-        # Agent: x_pos, y_pos, angle
-
         # check if user quit
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -243,23 +208,23 @@ class droneEnv(gym.Env):
         self.screen.fill(BLACK)
         
         # get player's transformed coordinates
-
         player_x_trans = agentx - self.Agent.x
         player_y_trans = agenty - self.Agent.y
 
-        # draw screen bounds
-        bounds = [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0],  [0,0]]
-        for i in range(len(bounds)):
-            bound = bounds[i]
-            bound[0] += player_x_trans
-            bound[1] += player_y_trans
-            pygame.draw.circle(self.screen, WHITE, bound, 3)
-        for i in range(len(bounds)-1):
-            pygame.draw.aaline(self.screen, WHITE, bounds[i], bounds[i+1])
-        pygame.draw.aaline(self.screen, WHITE, bounds[-1], bounds[0])
+        ## draw screen bounds
+        #bounds = [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0],  [0,0]]
+        #for i in range(len(bounds)):
+        #    bound = bounds[i]
+        #    bound[0] += player_x_trans
+        #    bound[1] += player_y_trans
+        #    pygame.draw.circle(self.screen, WHITE, bound, 3)
+        #for i in range(len(bounds)-1):
+        #    pygame.draw.aaline(self.screen, WHITE, bounds[i], bounds[i+1])
+        #pygame.draw.aaline(self.screen, WHITE, bounds[-1], bounds[0])
+
 
         # draw target
-        pygame.draw.circle(self.screen, RED, [self.x_target + player_x_trans, self.y_target+player_y_trans], 4)
+        pygame.draw.circle(self.screen, RED, [self.wp.x + player_x_trans, self.wp.y+player_y_trans], 4)
 
         # draw player
         player_sprite = self.Agent_image[int(self.pace * 0.1) % len(self.Agent_image)]
@@ -274,6 +239,9 @@ class droneEnv(gym.Env):
 
         # draw road
         self.rd.draw(self.screen, player_x_trans, player_y_trans)
+
+        # draw waypoint
+        self.wp.draw(self.screen, player_x_trans, player_y_trans)
 
         ## Update the display
         self.screen.blit(pygame.transform.flip(self.screen, False, True), (0, 0))     # mirror screen vertical

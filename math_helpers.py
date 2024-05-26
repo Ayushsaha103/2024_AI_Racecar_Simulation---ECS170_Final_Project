@@ -6,8 +6,9 @@ import numpy as np
 
 ############################################################################################################
 # waypoints
+############################################################################################################
 
-
+# tell if given_point is to left or right of line segment formed by connecting pt1 -> pt2
 def is_point_to_left_or_right(point1, point2, given_point):
     # Calculate vectors from point1 to point2 and from point1 to the given_point
     vector_p1p2 = (point2[0] - point1[0], point2[1] - point1[1])
@@ -24,8 +25,30 @@ def is_point_to_left_or_right(point1, point2, given_point):
     else:
         return 'on_line'
 
+# calculate distance of given_point from the line formed by connecting p1 and p2
+def distance_from_line(p1, p2, given_point):
+    # Convert points to numpy arrays for easier calculations
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    given_point = np.array(given_point)
+    
+    # Calculate the vector from p1 to p2
+    line_vector = p2 - p1
+    
+    # Calculate the vector from p1 to the given point
+    given_point_vector = given_point - p1
+    
+    # Calculate the perpendicular distance from the given point to the line
+    distance = np.linalg.norm(np.cross(line_vector, given_point_vector)) / np.linalg.norm(line_vector)
+    if is_point_to_left_or_right(p1, p2, given_point) == 'left':
+        return distance
+    else: return -distance
+
+
 ############################################################################################################
 # road lanes
+############################################################################################################
+
 
 # add 2 vectors
 def add(p1, p2):
@@ -83,4 +106,38 @@ def calculate_parallel_points(start, dest, dist=1, right_dir = True):
 # distance between 2 points
 def distance(point1, point2):
     return math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
+
+
+############################################################################################################
+# env
+############################################################################################################
+
+# calculate angle between vect1 and vect2
+def angle_between_vectors(vector1, vector2):
+    dot_product = sum(v1 * v2 for v1, v2 in zip(vector1, vector2))
+    magnitude1 = math.sqrt(sum(v ** 2 for v in vector1))
+    magnitude2 = math.sqrt(sum(v ** 2 for v in vector2))
+    angle_radians = math.acos(dot_product / (magnitude1 * magnitude2))
+
+    # determine whether vect2 is pointing to left/right/neither of vect1
+    cross_product = np.cross(vector1, vector2)
+    dir = -1
+    if cross_product > 0: dir = 0   # left
+    elif cross_product < 0: dir = 1     # right
+    else: dir = 2     # "Parallel or Collinear"
+
+    return 1 - (angle_radians / np.pi), dir
+
+# convert (angle, magnitude) into vector
+def angle2vect(angle, magnitude=1):
+    return [magnitude*math.cos(angle), magnitude*math.sin(angle)]
+
+# subtract vectors: p2 - p1
+def vectsub(pt1, pt2):    # pt2 - pt1
+    return [pt2[i] - pt1[i] for i in range(len(pt2))]
+
+# normalize vector
+def normalize(vect):
+    magnitude = math.sqrt(sum(v ** 2 for v in vect))
+    return [ vect[i] / magnitude for i in range(len(vect)) ]
 

@@ -75,7 +75,7 @@ class RacetrackEnv(Env):
         pygame.display.set_caption("Racetrack Environment")
         clock = pygame.time.Clock()
 
-        zoom_factor = .3  # Adjust this factor to zoom in or out
+        zoom_factor = 1  # Adjust this factor to zoom in or out
 
         running = True
         while running:
@@ -119,8 +119,29 @@ class RacetrackEnv(Env):
             pygame.display.flip()
             clock.tick(30)
 
+    def hasCollided(self):
+        error_margin = 5
+
+        # Check if collided with the right boundary
+        for x, y in zip(self.right_boundary_x, self.right_boundary_y):
+            if (
+                abs(x - self.car_x) < error_margin
+                and abs(y - self.car_y) < error_margin
+            ):
+                return True
+
+        # Check if collided with the left boundary
+        for x, y in zip(self.left_boundary_x, self.left_boundary_y):
+            if (
+                abs(x - self.car_x) < error_margin
+                and abs(y - self.car_y) < error_margin
+            ):
+                return True
+
+        return False
+
     def close(self):
-        pygame.quit()x
+        pygame.quit()
 
 
 if __name__ == "__main__":

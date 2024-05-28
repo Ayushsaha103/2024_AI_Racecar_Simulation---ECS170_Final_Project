@@ -120,7 +120,7 @@ class RacetrackEnv(Env):
             clock.tick(30)
 
     def close(self):
-        pygame.quit()x
+        pygame.quit()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,6 @@
+from racetractEnv import RacetrackEnv
+import pygame
+
 if __name__ == "__main__":
     env = RacetrackEnv()
     env.reset()

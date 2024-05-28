@@ -2,11 +2,11 @@ import numpy as np
 import pygame
 from pygame.locals import *
 from gym import Env, spaces
-
+from Agent import *
 import generator
 
 class RacetrackEnv(Env):
-    def __init__(self, track_length=1000, track_width=10, num_curves=25, max_curvature=0.15, track_number=42):
+    def __init__(self, track_length=1000, track_width=30, num_curves=25, max_curvature=0.1, track_number=42):
         super(RacetrackEnv, self).__init__()
         self.track_length = track_length
         self.track_width = track_width
@@ -19,10 +19,6 @@ class RacetrackEnv(Env):
 
         self.screen_width = 800
         self.screen_height = 600
-
-        self.action_space = spaces.Discrete(4)  # Forward, backward, left, right
-        self.observation_space = spaces.Box(
-            low=np.array([0, 0, -np.inf]), high=np.array([self.screen_width, self.screen_height, np.inf]), dtype=np.float32)
 
         self.car = pygame.Surface((10, 5), pygame.SRCALPHA)  # Smaller car
         pygame.draw.polygon(self.car, (0, 255, 0), [(0, 0), (10, 2.5), (0, 5)])
@@ -41,7 +37,7 @@ class RacetrackEnv(Env):
     def step(self, action):
         max_velocity = 5  # Adjusted speed
         min_velocity = -2  # allowing for some reverse movement
-        friction = 0.1  # friction coefficient
+        friction = 0.02  # friction coefficient
 
         if action == 0:  # Forward
             self.car_velocity = min(self.car_velocity + 0.5, max_velocity)
@@ -75,7 +71,7 @@ class RacetrackEnv(Env):
         pygame.display.set_caption("Racetrack Environment")
         clock = pygame.time.Clock()
 
-        zoom_factor = .3  # Adjust this factor to zoom in or out
+        zoom_factor = 2.3  # Adjust this factor to zoom in or out
 
         running = True
         while running:
@@ -92,8 +88,9 @@ class RacetrackEnv(Env):
                 self.step(2)
             if keys[K_d]:  # Right
                 self.step(3)
+                
 
-            screen.fill((255, 255, 255))
+            screen.fill((0,0,0))
 
             offset_x = self.screen_width // 2 - self.car_x * zoom_factor
             offset_y = self.screen_height // 2 - self.car_y * zoom_factor

@@ -14,7 +14,7 @@ def calculate_curvature(x, y):
     return curvature
 
 # Function to generate a racetrack
-def generate_racetrack(length, width, num_curves, max_curvature, track_number=42):
+def generate_racetrack(length, width, num_curves, max_curvature, track_number=42, num_pts=400):
     # Set random seed for reproducibility (commented out for random tracks each run)
     np.random.seed(track_number)
 
@@ -37,7 +37,7 @@ def generate_racetrack(length, width, num_curves, max_curvature, track_number=42
     max_curvature_reached = False  # Flag to check if curvature is within the limit
     while not max_curvature_reached:
         # Create a fine set of points along the spline
-        u_fine = np.linspace(0, 1, 1000)
+        u_fine = np.linspace(0, 1, num_pts)
         x_fine, y_fine = splev(u_fine, tck)
 
         # Calculate the curvature of the fine points

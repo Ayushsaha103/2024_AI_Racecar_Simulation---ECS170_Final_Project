@@ -40,7 +40,7 @@ BACKGROUND = "assets/sky.png"
 
 # Takes multiple image and provide animation in the game
 def spriter(Type):
-    if Type == "Drone":
+    if Type == "Car":
         image_width = 80 / 10
         image_height = (8/30) * 621 / 10
         image_path = "./assets/Drone/"

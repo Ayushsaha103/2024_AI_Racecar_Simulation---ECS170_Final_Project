@@ -9,14 +9,6 @@ from Constants import *
 # this variable adjusts how far ahead the waypoint is of the car
 lane_pts_ahead = 14
 
-# TODO:
-# - rename "WayPoints" class to "Waypoint"
-# - create new class "WayPoints", which consists of a list of "WayPoint" objects
-# ---> fix the updating mechanism for this WayPoints class
-# ---> create function get_data() to return the curvatures or positions of upcoming WayPoint objs ahead of car
-
-
-
 # waypoints class
 class WayPoints():
     # initialization

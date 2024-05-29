@@ -8,8 +8,8 @@ TIME_LIMIT    = 60  #How many seconds will it take for one episode?
 
 
 # ADDED
-agentx = WIDTH/2
-agenty = HEIGHT/2
+AGENTX = WIDTH/2
+AGENTY = HEIGHT/2
 
 # Define colors
 WHITE = (255, 255, 255)
@@ -31,7 +31,7 @@ gae_lambda     = 0.95
 max_grad_norm  = 0.5
 
 # Physical CONSTANTS
-FPS         = 60
+FPS         = 10
 
 # Model Configure 
 Model_Save_Path = "./models/" + str(int(total_timesteps/1000)) + "k.zip"  

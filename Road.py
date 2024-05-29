@@ -19,31 +19,31 @@ class Road():
 
     def reset(self):
         self.done = False
+        
+        # generate the original track points
         self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
         self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
+        
+        # generate the non-translated track points
         self.generate_track_pts(0,0)
 
-        # Draw the road as a filled polygon
-        road_points = self.left_boundary_points + self.right_boundary_points[::-1]
-        from shapely.geometry import Point
-        from shapely.geometry.polygon import Polygon
-
-        point = Point(agentx, agenty)
-        polygon = Polygon(road_points)
-        print("THIS: " + str(polygon.contains(point)))
-
-    def update(self):
-        pass
-    def check_for_update(self, car_pos):
-        pass
+        # # tell whether car is inside road (does NOT work)
+        # road_points = self.left_boundary_points + self.right_boundary_points[::-1]
+        # from shapely.geometry import Point
+        # from shapely.geometry.polygon import Polygon
+        # point = Point(AGENTX, AGENTY)
+        # polygon = Polygon(road_points)
+        # print("THIS: " + str(polygon.contains(point)))
+    
     def generate_track_pts(self, player_x_trans, player_y_trans):
+        # translate the original road points by player_x_trans, player_y_trans
         self.track_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.x_fine, self.y_fine)]
         self.left_boundary_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
         self.right_boundary_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
 
-    def draw(self, screen, player_x_trans, player_y_trans):
+    def update_and_draw(self, screen, player_x_trans, player_y_trans):
+        # generate the transformed track points
         self.generate_track_pts(player_x_trans, player_y_trans)
-
 
         # Draw the track boundaries
         pygame.draw.lines(screen, RED, False, self.left_boundary_points, 2)

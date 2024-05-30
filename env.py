@@ -116,6 +116,8 @@ class CarEnv(gym.Env):
             # UPDATE CAR POSITION
             # self.Agent.pidv(7, self.delta)        # constant speed update
             self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
+
+            print(self.rd.get_has_collided(self.Agent))
             
             # todo: add rewards, penalties, game termination
 

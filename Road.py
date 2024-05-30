@@ -57,5 +57,15 @@ class Road():
             pygame.draw.circle(screen, BLUE, m, 4)
             pygame.draw.circle(screen, RED, r, 4)
 
+    def get_has_collided(self, car):
+        # create a polygon from the road boundaries
+        left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
+        right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
 
 
+        road_points = left_boundary_points + right_boundary_points[::-1]
+        from shapely.geometry import Point
+        from shapely.geometry.polygon import Polygon
+        point = Point(car.x, car.y)
+        polygon = Polygon(road_points)
+        return not polygon.contains(point)

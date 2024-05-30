@@ -62,7 +62,7 @@ class Car(pygame.sprite.Sprite):
 
         #print("velocity [m/s]: " + str(self.v))
 
-        print([throttle, delta, self.v])
+        # print([throttle, delta, self.v])
         return throttle
     
 

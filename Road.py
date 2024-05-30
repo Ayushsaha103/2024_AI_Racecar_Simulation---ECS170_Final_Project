@@ -28,6 +28,15 @@ class Road():
         
         # generate the non-translated track points
         self.generate_track_pts(0,0)
+        
+        # zip the original coordinates into a list of points
+        left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
+        right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
+
+        # Create separate linestrings for the left and right boundaries
+        # This is used for collision detection
+        self.left_linestring = LineString(left_boundary_points)
+        self.right_linestring = LineString(right_boundary_points)
 
         # # tell whether car is inside road (does NOT work)
         # road_points = self.left_boundary_points + self.right_boundary_points[::-1]
@@ -60,13 +69,5 @@ class Road():
             pygame.draw.circle(screen, RED, r, 4)
 
     def get_has_collided(self, car):
-        # create a polygon from the road boundaries
-        left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
-        right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
-
-        # Create separate linestrings for the left and right boundaries
-        left_linestring = LineString(left_boundary_points)
-        right_linestring = LineString(right_boundary_points)
-
         # Check if the car intersects with either linestring
-        return left_linestring.intersects(car) or right_linestring.intersects(car)
+        return self.left_linestring.intersects(car) or self.right_linestring.intersects(car)

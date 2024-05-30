@@ -4,6 +4,8 @@ import pygame
 import generator
 from Constants import *
 from math_helpers import distance
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 class Road():
@@ -64,8 +66,6 @@ class Road():
 
 
         road_points = left_boundary_points + right_boundary_points[::-1]
-        from shapely.geometry import Point
-        from shapely.geometry.polygon import Polygon
         point = Point(car.x, car.y)
         polygon = Polygon(road_points)
         return not polygon.contains(point)

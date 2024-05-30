@@ -1,4 +1,3 @@
-
 import numpy as np
 import pygame
 import generator
@@ -21,14 +20,14 @@ class Road():
 
     def reset(self):
         self.done = False
-        
+
         # generate the original track points
         self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
         self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
-        
+
         # generate the non-translated track points
         self.generate_track_pts(0,0)
-        
+
         # zip the original coordinates into a list of points
         left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
         right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
@@ -45,7 +44,7 @@ class Road():
         # point = Point(AGENTX, AGENTY)
         # polygon = Polygon(road_points)
         # print("THIS: " + str(polygon.contains(point)))
-    
+
     def generate_track_pts(self, player_x_trans, player_y_trans):
         # translate the original road points by player_x_trans, player_y_trans
         self.track_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.x_fine, self.y_fine)]
@@ -70,4 +69,6 @@ class Road():
 
     def get_has_collided(self, car):
         # Check if the car intersects with either linestring
-        return self.left_linestring.intersects(car) or self.right_linestring.intersects(car)
+        return self.left_linestring.intersects(car) or self.right_linestring.intersects(
+            car
+        )

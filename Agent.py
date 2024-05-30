@@ -9,6 +9,9 @@ from collections import deque
 from Agent_helpers import *
 from math_helpers import *
 
+from shapely.geometry import box
+from shapely.affinity import rotate, translate
+
 # Screen
 WIDTH, HEIGHT =  Constants.WIDTH, Constants.HEIGHT
 
@@ -65,7 +68,17 @@ class Car(pygame.sprite.Sprite):
         # print([throttle, delta, self.v])
         return throttle
     
+    def get_bounding_box(self):
+        width = 80 / 10
+        height = (8/30) * 621 / 10
 
+        # create a rectangle from the point, width, height, and angle
+        bounding_box = box(-width/2, -height/2, width/2, height/2)
+        bounding_box = rotate(bounding_box, self.yaw, use_radians=True)
+        bounding_box = translate(bounding_box, self.x, self.y)
+
+        return bounding_box
+    
     # # # OLD FUNCTION FROM PREVIOUS VERSION (ayush1 branch)
     # # return True if car collides with road (rd) edge
     # def check_cross_rd_bounds(self, rd):

@@ -5,7 +5,7 @@ import generator
 from Constants import *
 from math_helpers import distance
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
+from shapely.geometry.polygon import LineString
 
 
 class Road():
@@ -64,8 +64,9 @@ class Road():
         left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
         right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
 
+        # Create separate linestrings for the left and right boundaries
+        left_linestring = LineString(left_boundary_points)
+        right_linestring = LineString(right_boundary_points)
 
-        road_points = left_boundary_points + right_boundary_points[::-1]
-        point = Point(car.x, car.y)
-        polygon = Polygon(road_points)
-        return not polygon.contains(point)
+        # Check if the car intersects with either linestring
+        return left_linestring.intersects(car) or right_linestring.intersects(car)

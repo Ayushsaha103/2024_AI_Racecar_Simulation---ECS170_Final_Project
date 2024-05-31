@@ -67,8 +67,17 @@ class Road():
             pygame.draw.circle(screen, BLUE, m, 4)
             pygame.draw.circle(screen, RED, r, 4)
 
+    def get_initial_position(self):
+        # Return the initial position of the car
+        return [self.x_fine[0], self.y_fine[0]]
+    
+    def get_initial_yaw(self):
+        # Return the initial yaw of the car
+        return np.arctan2(self.y_fine[1] - self.y_fine[0], self.x_fine[1] - self.x_fine[0])
+
     def get_has_collided(self, car):
         # Check if the car intersects with either linestring
         return self.left_linestring.intersects(car) or self.right_linestring.intersects(
             car
         )
+    

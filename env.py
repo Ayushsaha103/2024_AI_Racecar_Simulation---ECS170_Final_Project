@@ -64,15 +64,17 @@ class CarEnv(gym.Env):
 
     # reset the game
     def reset(self):
-        # reset car position and controlling variables
-        self.Agent.reset()
-        self.throttle, self.delta = 0,0
-        self.action = 0
-        
-        # # re-initialize road and waypoints objects
+        # re-initialize road and waypoints objects
         self.rd = Road()           # road object
         self.wp = Waypoints(10, self.rd, self.Agent)        # waypoints (target points) object
 
+        # reset car position and controlling variables
+        inital_pos = self.rd.get_initial_position()
+        initial_yaw = self.rd.get_initial_yaw()
+        self.Agent.reset(inital_pos[0], inital_pos[1], initial_yaw)
+        self.throttle, self.delta = 0,0
+        
+        self.action = 0
         # reset general game state counters
         # self.target_counter = 0
         self.reward = 0

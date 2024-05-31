@@ -45,14 +45,6 @@ class Car(pygame.sprite.Sprite):
         self.yaw_del = 0
         self.v = v
         self.pedals.reset()
-
-    def get_data(self, wp):
-        vx = np.cos(self.yaw) * self.v
-        vy = np.sin(self.yaw) * self.v
-        path_yaw = np.arctan2(self.nexty - self.y, self.nextx - self.x)
-        err_yaw = path_yaw - self.yaw
-        err_lat = distance([self.x, self.y], [wp.x, wp.y])
-        return [vx, vy, self.yaw_del, err_yaw, wp.s, err_lat]
     
     # update the car position so as to maintain const. velocity
     def pidv(self, vset, delta):

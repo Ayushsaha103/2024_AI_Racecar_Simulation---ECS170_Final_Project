@@ -78,13 +78,27 @@ class CarEnv(gym.Env):
         self.reward = 0
         # self.time   = 0
 
-        return self.get_obs()
+        return self.get_state()
 
     # return the state of the game (so Agent knows its surroundings)
-    def get_obs(self) -> np.ndarray:
-        return np.array([0,0,0,0,0,0])
-
-        # todo: properly return state data
+    # Agent x and y coordinates
+    # Agent velocity
+    # Agent steering angle
+    # list of distances to nearest Waypoints
+    # list of angles to nearest Waypoints
+    def get_state(self):
+        wp_distances = []
+        wp_yaws = []
+        n = len(self.rd.track_points)
+        for i in range(self.wp.npts):
+            wp_x, wp_y = self.rd.track_points[(self.wp.closest_pt + i) % n]
+            wp_dist = distance([self.Agent.x, self.Agent.y], [wp_x, wp_y])
+            wp_yaw = np.arctan2(wp_y - self.Agent.y, wp_x - self.Agent.x)
+            err_yaw = wp_yaw - self.Agent.yaw
+            wp_distances.append(wp_dist)
+            wp_yaws.append(err_yaw)
+        
+        return [self.Agent.x, self.Agent.y, self.Agent.v, self.Agent.yaw, wp_distances, wp_yaws]
 
     # single timestep update of game
     def step(self, action):
@@ -121,7 +135,7 @@ class CarEnv(gym.Env):
             
             # todo: add rewards, penalties, game termination
 
-        return self.get_obs(), self.reward, False, self.info
+        return self.get_state(), self.reward, False, self.info
     
     # render entire game to the screen
     def render(self):

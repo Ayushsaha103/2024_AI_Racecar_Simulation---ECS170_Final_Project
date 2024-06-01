@@ -141,3 +141,39 @@ def normalize(vect):
     magnitude = math.sqrt(sum(v ** 2 for v in vect))
     return [ vect[i] / magnitude for i in range(len(vect)) ]
 
+############################################################################################################
+# env - get_state()
+############################################################################################################
+
+def closest_point_on_segment(p, a, b):
+    """Returns the closest point on the segment ab to the point p."""
+    ap = p - a
+    ab = b - a
+    t = np.dot(ap, ab) / np.dot(ab, ab)
+    t = np.clip(t, 0, 1)
+    return a + t * ab
+def find_ey(car_pos, xy_pairs):
+    car_pos = np.array(car_pos)
+    min_distance = float('inf')
+    closest_segment = None
+    closest_point = None
+
+    for i in range(len(xy_pairs) - 1):
+        a = np.array(xy_pairs[i])
+        b = np.array(xy_pairs[i + 1])
+        closest_point_on_ab = closest_point_on_segment(car_pos, a, b)
+        dist = distance(car_pos, closest_point_on_ab)
+        if dist < min_distance:
+            min_distance = dist
+            closest_segment = (xy_pairs[i], xy_pairs[i + 1])
+            closest_point = closest_point_on_ab
+    if is_point_to_left_or_right(closest_segment[0], closest_segment[1], car_pos) == 'left':
+        min_distance *= (-1)
+    return min_distance, closest_segment, closest_point
+
+# # Example usage
+# xy_pairs = [(1, 0), (2, 3), (3, 5)]
+# car_pos = (1.25, 1)
+# min_distance, segment, closest_point = find_nearest_segment(car_pos, xy_pairs)
+
+

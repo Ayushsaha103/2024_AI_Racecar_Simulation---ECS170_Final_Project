@@ -26,7 +26,10 @@ class Road():
         self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
 
         # generate the non-translated track points
-        self.generate_track_pts(0,0)
+        self.orig_track_pts = [(x, y) for x, y in zip(self.x_fine, self.y_fine)]
+        self.orig_left_pts = [(x,y) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
+        self.orig_right_pts = [(x,y) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
+        self.generate_translated_track_pts(0,0)
 
         # zip the original coordinates into a list of points
         left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
@@ -37,32 +40,25 @@ class Road():
         self.left_linestring = LineString(left_boundary_points)
         self.right_linestring = LineString(right_boundary_points)
 
-        # # tell whether car is inside road (does NOT work)
-        # road_points = self.left_boundary_points + self.right_boundary_points[::-1]
-        # from shapely.geometry import Point
-        # from shapely.geometry.polygon import Polygon
-        # point = Point(AGENTX, AGENTY)
-        # polygon = Polygon(road_points)
-        # print("THIS: " + str(polygon.contains(point)))
-
-    def generate_track_pts(self, player_x_trans, player_y_trans):
+        
+    def generate_translated_track_pts(self, player_x_trans, player_y_trans):
         # translate the original road points by player_x_trans, player_y_trans
-        self.track_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.x_fine, self.y_fine)]
-        self.left_boundary_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
-        self.right_boundary_points = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
+        self.translated_track_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.x_fine, self.y_fine)]
+        self.translated_left_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
+        self.translated_right_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
 
     def update_and_draw(self, screen, player_x_trans, player_y_trans):
         # generate the transformed track points
-        self.generate_track_pts(player_x_trans, player_y_trans)
+        self.generate_translated_track_pts(player_x_trans, player_y_trans)
 
         # Draw the track boundaries
-        pygame.draw.lines(screen, RED, False, self.left_boundary_points, 2)
-        pygame.draw.lines(screen, RED, False, self.right_boundary_points, 2)
-        pygame.draw.lines(screen, BLUE, False, self.track_points, 2)
+        pygame.draw.lines(screen, RED, False, self.translated_left_pts, 2)
+        pygame.draw.lines(screen, RED, False, self.translated_right_pts, 2)
+        pygame.draw.lines(screen, BLUE, False, self.translated_track_pts, 2)
 
         # draw road points
-        for i in range(len(self.left_boundary_points)):
-            l,m,r = self.left_boundary_points[i], self.track_points[i], self.right_boundary_points[i]
+        for i in range(len(self.translated_left_pts)):
+            l,m,r = self.translated_left_pts[i], self.translated_track_pts[i], self.translated_right_pts[i]
             pygame.draw.circle(screen, RED, l, 4)
             pygame.draw.circle(screen, BLUE, m, 4)
             pygame.draw.circle(screen, RED, r, 4)

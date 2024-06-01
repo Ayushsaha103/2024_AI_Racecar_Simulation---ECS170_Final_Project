@@ -59,7 +59,7 @@ class Car(pygame.sprite.Sprite):
 
         self.x += self.v * np.cos(self.yaw) * dt
         self.y += self.v * np.sin(self.yaw) * dt
-        self.yaw += self.v / L * np.tan(delta) * dt
+        self.yaw += (0.0067*L / (0.01*self.v+0.1)) * np.tan(delta) * dt
         self.yaw = normalize_angle(self.yaw)
         self.v += throttle * dt
 

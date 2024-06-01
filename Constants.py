@@ -10,6 +10,7 @@ TIME_LIMIT    = 60  #How many seconds will it take for one episode?
 # ADDED
 AGENTX = WIDTH/2
 AGENTY = HEIGHT/2
+NUM_WAYPOINTS = 10
 
 # Define colors
 WHITE = (255, 255, 255)

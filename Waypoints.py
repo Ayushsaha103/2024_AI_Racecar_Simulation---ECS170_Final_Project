@@ -22,14 +22,14 @@ class Waypoints():
 
     # update which points on the track are the waypoints
     def update(self):
-        n = len(self.rd.track_points)
+        n = len(self.rd.translated_track_pts)
         car_pos = (AGENTX, AGENTY)
         mindist = 999999999999
         closest_idx = -1
 
         # find closest point on road track points to car
         for i in range(n):
-            d = distance(self.rd.track_points[(i) % n], car_pos)
+            d = distance(self.rd.translated_track_pts[(i) % n], car_pos)
             if d <= mindist:
                 mindist = d
                 closest_idx = i
@@ -38,13 +38,13 @@ class Waypoints():
     
     # draw the waypoints onto the screen
     def draw(self, screen, pt_size=4):
-        # draw line to nearest waypoint
-        pygame.draw.line(screen, RED, self.rd.track_points[(self.closest_pt)], (AGENTX, AGENTY), 5)
+        # # draw line to nearest waypoint
+        # pygame.draw.line(screen, RED, self.rd.translated_track_pts[(self.closest_pt)], (AGENTX, AGENTY), 5)
 
         # draw the waypoints
-        n = len(self.rd.track_points)
+        n = len(self.rd.translated_track_pts)
         for i in range(self.npts):
-            point = self.rd.track_points[(self.closest_pt+i)  % n]
-            # transformed_pt = (point[0]+player_x_trans, point[1]+player_y_trans)
-            pygame.draw.circle(screen, GREEN, point, pt_size)
-
+            point1 = self.rd.translated_left_pts[(self.closest_pt+i)  % n]
+            point2 = self.rd.translated_right_pts[(self.closest_pt+i)  % n]
+            pygame.draw.circle(screen, GREEN, point1, pt_size)
+            pygame.draw.circle(screen, GREEN, point2, pt_size)

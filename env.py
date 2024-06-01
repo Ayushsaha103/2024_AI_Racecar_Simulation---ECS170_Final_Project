@@ -59,8 +59,14 @@ class CarEnv(gym.Env):
         self.info = {}
         Constants.report(self)
 
+        # Initialize Road
+        self.road = Road()
+
         # Start lap timer
-        self.start_time = 0
+        self.start_time = pygame.time.get_ticks()
+
+        # Start lap counter
+        self.lap_count = 0
         
         # ADDED variables
         self.reset()
@@ -84,8 +90,7 @@ class CarEnv(gym.Env):
         # self.time   = 0
 
         # Reset lap timer
-        self.start_time = pygame.time.get_ticks()
-        print("start time: ", self.start_time) #test
+        self.start_time = 0
 
         return self.get_obs()
 
@@ -181,12 +186,28 @@ class CarEnv(gym.Env):
         # self.screen.blit(textsurface, (20, 20))
         # self.screen.blit(textsurface3, (20, 50))
 
-        # Display lap time in the bottom right-hand corner
+        # Display lap time
         elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000  # in seconds
         lap_time_text = self.myfont.render(f"Lap Time: {elapsed_time:.2f}s", False, WHITE)
         text_rect = lap_time_text.get_rect()
         text_rect.bottomright = (WIDTH - 20, HEIGHT - 20)
         self.screen.blit(lap_time_text, text_rect)
+
+        # Display lap count
+        print("Agent x: ", self.Agent.x, "\tAgent y: ", self.Agent.y)
+        print("initial position: ", self.road.get_initial_position())
+        initial_pos = self.rd.get_initial_position()
+        agent_pos = (self.Agent.x, self.Agent.y)
+        
+        # Check if agent is within a 10x10 box of the initial position
+        if (initial_pos[0] - 5 <= agent_pos[0] <= initial_pos[0] + 5 and
+            initial_pos[1] - 5 <= agent_pos[1] <= initial_pos[1] + 5):
+            self.lap_count += 1
+            self.start_time = pygame.time.get_ticks()
+        lap_count_text = self.myfont.render(f"Lap Count: {self.lap_count}", False, WHITE)
+        count_rect = lap_count_text.get_rect()
+        count_rect.bottomright = (WIDTH - 40, HEIGHT - 40)
+        self.screen.blit(lap_count_text, count_rect)
 
         pygame.display.flip()       # update display
         #pygame.display.update()

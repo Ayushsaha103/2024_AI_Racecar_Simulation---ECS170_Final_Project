@@ -58,6 +58,9 @@ class CarEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float16)
         self.info = {}
         Constants.report(self)
+
+        # Start lap timer
+        self.start_time = 0
         
         # ADDED variables
         self.reset()
@@ -79,6 +82,10 @@ class CarEnv(gym.Env):
         # self.target_counter = 0
         self.reward = 0
         # self.time   = 0
+
+        # Reset lap timer
+        self.start_time = pygame.time.get_ticks()
+        print("start time: ", self.start_time) #test
 
         return self.get_obs()
 
@@ -173,6 +180,13 @@ class CarEnv(gym.Env):
         # textsurface3 = self.myfont.render("Time: " + str(int(self.time)), False, WHITE)
         # self.screen.blit(textsurface, (20, 20))
         # self.screen.blit(textsurface3, (20, 50))
+
+        # Display lap time in the bottom right-hand corner
+        elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000  # in seconds
+        lap_time_text = self.myfont.render(f"Lap Time: {elapsed_time:.2f}s", False, WHITE)
+        text_rect = lap_time_text.get_rect()
+        text_rect.bottomright = (WIDTH - 20, HEIGHT - 20)
+        self.screen.blit(lap_time_text, text_rect)
 
         pygame.display.flip()       # update display
         #pygame.display.update()

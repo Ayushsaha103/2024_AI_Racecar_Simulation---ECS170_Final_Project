@@ -30,6 +30,15 @@ m = 1500.0  # kg
 # Car class
 ################################################################################################
 
+def calc_av_dyaw_dt(values):
+    # Convert the input to a numpy array if it isn't already
+    values = np.array(values)
+    # Calculate the differences between consecutive elements
+    differences = np.diff(values)
+    # Calculate and return the average of these differences
+    average_diff = np.mean(differences) / dt
+    return average_diff
+
 class Car(pygame.sprite.Sprite):
     # init.
     def __init__(self):
@@ -42,9 +51,10 @@ class Car(pygame.sprite.Sprite):
         self.x = x
         self.y = y
         self.yaw = yaw
-        self.yaw_del = 0
         self.v = v
         self.traveled = 0
+        self.wz = 0
+        self.prev_yaws = [yaw]*4
         self.pedals.reset()
     
     # update the car position so as to maintain const. velocity
@@ -62,14 +72,17 @@ class Car(pygame.sprite.Sprite):
         self.x += self.v * np.cos(self.yaw) * dt
         self.y += self.v * np.sin(self.yaw) * dt
         self.traveled += self.v * dt
-        self.yaw_del = min(self.v, 1.5) / L * np.tan(delta) * dt
-        self.yaw += self.yaw_del
+        yaw_del = min(self.v, 1.5) / L * np.tan(delta) * dt
+        self.yaw += yaw_del
         self.yaw = normalize_angle(self.yaw)
         self.v += throttle * dt
+        self.traveled += self.v * dt
 
-        # print("velocity [m/s]: " + str(self.v))
+        # calculate wz
+        self.prev_yaws.pop(0)
+        self.prev_yaws.append(self.yaw)
+        self.wz = calc_av_dyaw_dt(self.prev_yaws)
 
-        # print([throttle, delta, self.v])
         return throttle
 
     def get_bounding_box(self):
@@ -83,35 +96,3 @@ class Car(pygame.sprite.Sprite):
         bounding_box = translate(bounding_box, self.x, self.y)
 
         return bounding_box
-
-    # # # OLD FUNCTION FROM PREVIOUS VERSION (ayush1 branch)
-    # # return True if car collides with road (rd) edge
-    # def check_cross_rd_bounds(self, rd):
-    # l1 = len(rd.lanes) - 1
-    # l2 = len(rd.lanes) - 2
-    # l1 = rd.lanes[l1]; l2 = rd.lanes[l2]
-
-    # mindist1, mindist2 = 99999, 99999
-    # i1, i2 = 0, 0
-    # mindist_midlane = 99999; imid = 0; lmid = rd.lanes[0]
-    # for i in range(len(l1.points)-1):
-    #     sum_pt_dist1 = distance(l1.points[i], [self.x, self.y]) + distance(l1.points[i+1],  [self.x, self.y])
-    #     if sum_pt_dist1 < mindist1:
-    #         mindist1 = sum_pt_dist1
-    #         i1 = i
-    #     sum_pt_dist2 = distance(l2.points[i], [self.x, self.y]) + distance(l2.points[i+1],  [self.x, self.y])
-    #     if sum_pt_dist2 < mindist2:
-    #         mindist2 = sum_pt_dist2
-    #         i2 = i
-    #     sum_pt_distmid = distance(lmid.points[i], [self.x, self.y]) + distance(lmid.points[i+1],  [self.x, self.y])
-    #     if sum_pt_distmid < mindist_midlane:
-    #         mindist_midlane = sum_pt_distmid
-    #         imid = i
-    # if is_point_to_left_or_right(l1.points[i1], l1.points[i1+1], [self.x, self.y]) != 'right':
-    #     return True
-    # if is_point_to_left_or_right(l2.points[i2], l2.points[i2+1], [self.x, self.y]) != 'left':
-    #     return True
-    # if is_yaw_opposite_to_vector(self.yaw, lmid.points[imid], lmid.points[imid+1]):
-    #     return True
-
-    # return False

@@ -30,33 +30,20 @@ total_timesteps = Constants.total_timesteps
 
 try:
     # In addition to PPO, A2C and DQN are also viable options.
-    print("preload")
-    ## initialize model
+
+    # initialize model
     model = A2C('MlpPolicy',
                env,
-            #    learning_rate   = learning_rate,
-            #    ent_coef        = ent_coef, 
-            #    gamma           = gamma, 
-            #    gae_lambda      = gae_lambda,
-            #    max_grad_norm   = max_grad_norm,
-               verbose         = 2, 
-            #    tensorboard_log = tensorboard_log_path,
-               device          = "cpu")
-    custom_objects = {
-        "learning_rate": learning_rate,
-        "ent_coef": ent_coef,
-        "gamma": gamma,
-        "gae_lambda": gae_lambda,
-        "max_grad_norm": max_grad_norm,
-        "verbose": 2,
-        "tensorboard_log": tensorboard_log_path,
-        "lr_schedule": lambda _: 0.0,
-        # "clip_range": lambda _: 0.0,
-    }
+               learning_rate   = learning_rate,
+               ent_coef        = ent_coef, 
+               gamma           = gamma, 
+               gae_lambda      = gae_lambda,
+               max_grad_norm   = max_grad_norm,
+               verbose         = 0, 
+               tensorboard_log = tensorboard_log_path)
     
-    # load existing model
-    # model = A2C("./models/AIcar_rev1.zip", env=env, custom_objects=custom_objects, verbose=2, print_system_info=True, device="cpu")
-    print("loaded")
+    # # load existing model
+    # model = A2C.load("./models/AIcar_rev1.zip", env=env)
     
     # train model
     model.learn(total_timesteps = total_timesteps, 

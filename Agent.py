@@ -30,6 +30,15 @@ m = 1500.0  # kg
 # Car class
 ################################################################################################
 
+def calc_av_dyaw_dt(values):
+    # Convert the input to a numpy array if it isn't already
+    values = np.array(values)
+    # Calculate the differences between consecutive elements
+    differences = np.diff(values)
+    # Calculate and return the average of these differences
+    average_diff = np.mean(differences) / dt
+    return average_diff
+
 class Car(pygame.sprite.Sprite):
     # init.
     def __init__(self):
@@ -43,6 +52,9 @@ class Car(pygame.sprite.Sprite):
         self.y = y
         self.yaw = yaw
         self.v = v
+        self.traveled = 0
+        self.wz = 0
+        self.prev_yaws = [yaw]*4
         self.pedals.reset()
 
     # update the car position so as to maintain const. velocity
@@ -59,13 +71,18 @@ class Car(pygame.sprite.Sprite):
 
         self.x += self.v * np.cos(self.yaw) * dt
         self.y += self.v * np.sin(self.yaw) * dt
-        self.yaw += (0.0067*L / (0.01*self.v+0.1)) * np.tan(delta) * dt
+        yaw_del = (0.0067*L / (0.01*self.v+0.1)) * np.tan(delta) * dt
+        self.yaw += yaw_del
         self.yaw = normalize_angle(self.yaw)
         self.v += throttle * dt
+        self.traveled += self.v * dt
 
-        # print("velocity [m/s]: " + str(self.v))
+        # calculate wz
+        self.prev_yaws.pop(0)
+        self.prev_yaws.append(self.yaw)
+        # self.wz = yaw_del       # todo: change this to be an average of the last few yaw_del's
+        self.wz = calc_av_dyaw_dt(self.prev_yaws)
 
-        # print([throttle, delta, self.v])
         return throttle
 
     def get_bounding_box(self):

@@ -1,11 +1,8 @@
 import pygame
 import Constants
-import os
-
 
 import math
 import numpy as np
-from collections import deque
 from Agent_helpers import *
 from math_helpers import *
 
@@ -21,10 +18,8 @@ max_steer = np.radians(16.0)  # [rad] max steering angle
 max_throttle = 0.5            # [?] max throttle force
 max_v = 7.0                   # [?] max velocity
 
-L = 6  # [m] Wheel base of vehicle
+L = 6                         # [m] Wheel base of vehicle
 dt = 0.8
-m = 1500.0  # kg
-
 
 ################################################################################################
 # Car class

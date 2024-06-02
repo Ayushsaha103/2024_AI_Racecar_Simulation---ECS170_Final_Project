@@ -1,6 +1,4 @@
 import os
-from math import sin, cos, pi, sqrt
-from random import randrange
 
 import pygame
 from pygame.locals import *
@@ -16,11 +14,8 @@ from Waypoints import *
 from math_helpers import find_ey
 import math
 
-
 os.system('cls' if os.name == 'nt' else 'clear') # Cleaning library loading information texts
 print("Fetching Libraries.. Please Wait..")
-
-
 
 ################################################################################################
 # Car Env Class
@@ -144,7 +139,7 @@ class CarEnv(gym.Env):
         
         # choose controlling action to either be self.action (manual) or action (agent-controlled)
         ctrl_action = int(action)       # agent control
-        # ctrl_action = self.action     # manual control
+        # ctrl_action = self.action       # manual control
         
         # Act every x frames. Range can be altered. 
         for _ in range(1):

@@ -6,7 +6,6 @@ from math_helpers import distance
 from shapely.geometry import Point
 from shapely.geometry.polygon import LineString
 
-
 class Road():
     def __init__(self, track_length=1000, track_width=100, num_curves=25, max_curvature=0.1, track_number=42, num_pts=400):
         self.track_length = track_length

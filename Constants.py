@@ -1,11 +1,9 @@
 import os
 import pygame
 
-
 # Window CONFIGURE
 WIDTH, HEIGHT = 600, 600
 TIME_LIMIT    = 60  #How many seconds will it take for one episode?
-
 
 # ADDED
 AGENTX = WIDTH/2
@@ -13,13 +11,13 @@ AGENTY = HEIGHT/2
 NUM_WAYPOINTS = 10
 
 # Define colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
+WHITE  = (255, 255, 255)
+BLACK  = (0, 0, 0)
+RED    = (255, 0, 0)
 ORANGE = (255, 165, 0)
 YELLOW = (255, 255, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+GREEN  = (0, 255, 0)
+BLUE   = (0, 0, 255)
 INDIGO = (75, 0, 130)
 VIOLET = (238, 130, 238)
 
@@ -38,23 +36,15 @@ FPS         = 10
 Model_Save_Path = "./models/" + str(int(total_timesteps/1000)) + "k.zip"  
 # Indicates the model path which will save after the training, 
 
-tensorboard_log = "./DroneLog/"
+tensorboard_log = "./CarLog/"
 tensorboard_sub_folder = 'new_training' + str(total_timesteps/1000) + "k"
-
-# Display and asset Settings & Function
-BACKGROUND = "assets/sky.png"
 
 # Takes multiple image and provide animation in the game
 def spriter(Type):
     if Type == "Car":
         image_width = 80 / 10
         image_height = (8/30) * 621 / 10
-        image_path = "./assets/Drone/"
-
-    elif Type == "Baloon":
-        image_width = 30
-        image_height = int(image_width * 1.7)
-        image_path = "./assets/Baloon/"
+        image_path = "./assets/Car/"
 
     player = []
 

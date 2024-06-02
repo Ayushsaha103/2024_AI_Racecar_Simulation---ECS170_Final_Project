@@ -168,6 +168,7 @@ class CarEnv(gym.Env):
         
         # rewards
         # self.reward += 1/FPS        # reward for surviving
+
         self.reward += 0.1*self.Agent.v     # reward for moving fast
 
         ey, err_yaw = self.data[1], self.data[2]
@@ -202,7 +203,6 @@ class CarEnv(gym.Env):
                 self.action = 4
             else:
                 self.action = 0
-
 
         # fill screen black
         self.screen.fill(BLACK)

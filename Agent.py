@@ -17,11 +17,11 @@ WIDTH, HEIGHT =  Constants.WIDTH, Constants.HEIGHT
 
 
 # car constants
-max_steer = np.radians(32.0)  # [rad] max steering angle
-max_throttle = 1.0             # [?] max throttle force
-max_v = 4.0                    # [?] max velocity
+max_steer = np.radians(16.0)  # [rad] max steering angle
+max_throttle = 0.5            # [?] max throttle force
+max_v = 7.0                   # [?] max velocity
 
-L = 7.9  # [m] Wheel base of vehicle
+L = 6  # [m] Wheel base of vehicle
 dt = 0.8
 m = 1500.0  # kg
 
@@ -44,6 +44,7 @@ class Car(pygame.sprite.Sprite):
         self.yaw = yaw
         self.yaw_del = 0
         self.v = v
+        self.traveled = 0
         self.pedals.reset()
     
     # update the car position so as to maintain const. velocity
@@ -56,11 +57,12 @@ class Car(pygame.sprite.Sprite):
         delta = np.clip(delta, -max_steer, max_steer)
         throttle = np.clip(throttle, -max_throttle, max_throttle)
         self.v = np.clip(self.v, 0, max_v)
-        if self.v == 0: throttle = 0.01
+        # if self.v == 0: throttle = 0.01
 
         self.x += self.v * np.cos(self.yaw) * dt
         self.y += self.v * np.sin(self.yaw) * dt
-        self.yaw_del = self.v / L * np.tan(delta) * dt
+        self.traveled += self.v * dt
+        self.yaw_del = min(self.v, 1.5) / L * np.tan(delta) * dt
         self.yaw += self.yaw_del
         self.yaw = normalize_angle(self.yaw)
         self.v += throttle * dt

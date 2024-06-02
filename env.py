@@ -98,7 +98,7 @@ class CarEnv(gym.Env):
             wp_distances.append(wp_dist)
             wp_yaws.append(err_yaw)
         
-        return [self.Agent.x, self.Agent.y, self.Agent.v, self.Agent.yaw, wp_distances, wp_yaws]
+        return [self.Agent.x, self.Agent.y, self.Agent.v, self.Agent.yaw, self.Agent.yaw_del, self.Agent.traveled, wp_distances, wp_yaws]
 
     # single timestep update of game
     def step(self, action):
@@ -116,22 +116,24 @@ class CarEnv(gym.Env):
             # self.time += 1 / Constants.FPS
 
             # specify agent operations for certain values of A2C's output 'action'
-            if ctrl_action == 0:         # do nothing
+            if ctrl_action < 3:
+                self.throttle = 0
+            elif ctrl_action < 6:         # increase throttle force
+                self.throttle = min(max_throttle, self.throttle + 0.01)
+            else:                       # decrease throttle force
+                self.throttle = max(-max_throttle, self.throttle - 0.01)
+            if ctrl_action % 3 == 1:    # increase delta angle
+                self.delta = min(max_steer, self.delta + np.radians(0.5))
+            elif ctrl_action % 3 == 2:  # decrease delta angle
+                self.delta = max(-max_steer, self.delta - np.radians(0.5))
+            else:
                 self.delta = 0
-            elif ctrl_action == 1:       # increase throttle force
-                self.throttle = min(max_throttle, self.throttle + 0.02)
-            elif ctrl_action == 2:       # decrease throttle force
-                self.throttle = max(-max_throttle, self.throttle - 0.03)
-            elif ctrl_action == 3:       # increase delta angle
-                self.delta = min(max_steer, self.delta + np.radians(.4))
-            elif ctrl_action == 4:       # decrease delta angle
-                self.delta = max(-max_steer, self.delta - np.radians(.4))
     
             # UPDATE CAR POSITION
             # self.Agent.pidv(7, self.delta)        # constant speed update
             self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
 
-            print("Has Collided", self.rd.get_has_collided(self.Agent.get_bounding_box()))
+            # print("Has Collided", self.rd.get_has_collided(self.Agent.get_bounding_box()))
             
             # todo: add rewards, penalties, game termination
 
@@ -148,15 +150,15 @@ class CarEnv(gym.Env):
                 quit()
             keys = pygame.key.get_pressed()
             if keys[K_w]:  # Accelerate
-                self.action = 1
-            elif keys[K_s]:  # Brake
-                self.action = 2
-            elif keys[K_a]:  # Right
                 self.action = 3
-            elif keys[K_d]:  # Left
-                self.action = 4
+            elif keys[K_s]:  # Brake
+                self.action = 6
             else:
                 self.action = 0
+            if keys[K_a]:  # Right
+                self.action += 1
+            elif keys[K_d]:  # Left
+                self.action += 2
 
         # fill screen black
         self.screen.fill(BLACK)

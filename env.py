@@ -118,7 +118,7 @@ class CarEnv(gym.Env):
             # specify agent operations for certain values of A2C's output 'action'
             if ctrl_action < 3:
                 self.throttle = 0
-            elif ctrl_action < 6:         # increase throttle force
+            elif ctrl_action < 6:       # increase throttle force
                 self.throttle = min(max_throttle, self.throttle + 0.01)
             else:                       # decrease throttle force
                 self.throttle = max(-max_throttle, self.throttle - 0.01)
@@ -149,13 +149,13 @@ class CarEnv(gym.Env):
                 del(self)
                 quit()
             keys = pygame.key.get_pressed()
-            if keys[K_w]:  # Accelerate
+            if keys[K_w]:    # Accelerate
                 self.action = 3
             elif keys[K_s]:  # Brake
                 self.action = 6
             else:
                 self.action = 0
-            if keys[K_a]:  # Right
+            if keys[K_a]:    # Right
                 self.action += 1
             elif keys[K_d]:  # Left
                 self.action += 2

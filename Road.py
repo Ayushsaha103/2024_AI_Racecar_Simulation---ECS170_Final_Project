@@ -60,6 +60,9 @@ class Road():
         pygame.draw.lines(screen, RED, False, self.right_boundary_points, 2)
         pygame.draw.lines(screen, BLUE, False, self.track_points, 2)
 
+        # Draw starting / finish line
+        pygame.draw.line(screen, GREEN, self.left_boundary_points[0], self.right_boundary_points[0], 5)
+
         # draw road points
         for i in range(len(self.left_boundary_points)):
             l,m,r = self.left_boundary_points[i], self.track_points[i], self.right_boundary_points[i]

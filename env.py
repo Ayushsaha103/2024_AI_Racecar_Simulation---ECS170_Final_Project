@@ -199,9 +199,9 @@ class CarEnv(gym.Env):
         initial_pos = self.rd.get_initial_position()
         agent_pos = (self.Agent.x, self.Agent.y)
         
-        # Check if agent is within a 10x10 box of the initial position
-        if (initial_pos[0] - 5 <= agent_pos[0] <= initial_pos[0] + 5 and
-            initial_pos[1] - 5 <= agent_pos[1] <= initial_pos[1] + 5):
+        # Check if agent is within a 20x20 box of the initial position
+        if (initial_pos[0] - 10 <= agent_pos[0] <= initial_pos[0] + 10 and
+            initial_pos[1] - 10 <= agent_pos[1] <= initial_pos[1] + 10):
             self.lap_count += 1
             self.start_time = pygame.time.get_ticks()
         lap_count_text = self.myfont.render(f"Lap Count: {self.lap_count}", False, WHITE)

@@ -54,7 +54,7 @@ class CarEnv(gym.Env):
         self.Agent_image = spriter("Car")
         
         # GYM CONFIGURE
-        self.action_space      = gym.spaces.Discrete(5)
+        self.action_space      = gym.spaces.Discrete(9)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float16)
         self.info = {}
         Constants.report(self)

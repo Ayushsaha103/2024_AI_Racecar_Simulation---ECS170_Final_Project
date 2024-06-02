@@ -8,7 +8,7 @@ from shapely.geometry.polygon import LineString
 
 
 class Road():
-    def __init__(self, track_length=1000, track_width=50, num_curves=25, max_curvature=0.1, track_number=42, num_pts=400):
+    def __init__(self, track_length=1000, track_width=100, num_curves=25, max_curvature=0.1, track_number=42, num_pts=400):
         self.track_length = track_length
         self.track_width = track_width
         self.num_curves = num_curves

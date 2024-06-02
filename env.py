@@ -127,7 +127,7 @@ class CarEnv(gym.Env):
         ephi = wp_yaw - self.Agent.yaw
 
         # todo: calculate s, wz
-        s, wz = 0, 0
+        s, wz = self.Agent.traveled, self.Agent.wz
 
         self.data = [self.Agent.v, ey, ephi] + [s, wz] + wp_distances + wp_angles
         return np.array(self.data).astype(np.float16)
@@ -167,7 +167,7 @@ class CarEnv(gym.Env):
             # print([self.throttle, self.delta, self.Agent.v])        # show action info
         
         # rewards
-        self.reward += 1/FPS        # reward for surviving
+        # self.reward += 1/FPS        # reward for surviving
         self.reward += 0.1*self.Agent.v     # reward for moving fast
 
         ey, err_yaw = self.data[1], self.data[2]
@@ -190,18 +190,19 @@ class CarEnv(gym.Env):
                 pygame.quit()
                 del(self)
                 quit()
-            # # MANUAL keystroke car-control inputs
-            # keys = pygame.key.get_pressed()
-            # if keys[K_w]:  # Accelerate
-            #     self.action = 1
-            # elif keys[K_s]:  # Brake
-            #     self.action = 2
-            # elif keys[K_a]:  # Right
-            #     self.action = 3
-            # elif keys[K_d]:  # Left
-            #     self.action = 4
-            # else:
-            #     self.action = 0
+            # MANUAL keystroke car-control inputs
+            keys = pygame.key.get_pressed()
+            if keys[K_w]:  # Accelerate
+                self.action = 1
+            elif keys[K_s]:  # Brake
+                self.action = 2
+            elif keys[K_a]:  # Right
+                self.action = 3
+            elif keys[K_d]:  # Left
+                self.action = 4
+            else:
+                self.action = 0
+
 
         # fill screen black
         self.screen.fill(BLACK)

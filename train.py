@@ -12,7 +12,7 @@ import logging
 
 import Constants
 
-from stable_baselines3 import A2C #PPO, DQN also can be used 
+from stable_baselines3 import A2C, PPO, DQN
 
 from env import CarEnv
 env = CarEnv()
@@ -32,7 +32,7 @@ try:
     # In addition to PPO, A2C and DQN are also viable options.
 
     # initialize model
-    model = A2C('MlpPolicy',
+    model = PPO('MlpPolicy',
                env,
                learning_rate   = learning_rate,
                ent_coef        = ent_coef, 
@@ -52,7 +52,6 @@ try:
                 tb_log_name     = tensorboard_sub_folder, 
                 reset_num_timesteps=True, 
                 progress_bar=False)
-    print("learned")
     
     # save model
     Model_Save_Path = Constants.Model_Save_Path

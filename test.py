@@ -1,6 +1,7 @@
 import pygame
-from env import CarEnv
-env = CarEnv()
+from env import droneEnv
+env = droneEnv()
+
 
 print("\n\n")
 print("Observation space:")
@@ -12,6 +13,7 @@ print("")
 print("Action space sample:")
 print(env.action_space.sample(),"\n\n")
 
+
 episode = 0
 while episode < 10:
     state = env.reset()
@@ -19,6 +21,7 @@ while episode < 10:
     score = 0
     
     while not done:
+        
         #env.render() # Step method already involves rendering
         pygame.time.delay(5)
         for event in pygame.event.get():

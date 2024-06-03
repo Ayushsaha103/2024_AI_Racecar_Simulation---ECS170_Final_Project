@@ -67,6 +67,9 @@ class CarEnv(gym.Env):
 
         # Start lap counter
         self.lap_count = 0
+
+        # Lap crossed boolean
+        self.crossed_finish_line = False
         
         # ADDED variables
         self.reset()
@@ -90,7 +93,8 @@ class CarEnv(gym.Env):
         # self.time   = 0
 
         # Reset lap timer
-        self.start_time = 0
+        self.start_time = pygame.time.get_ticks()
+        self.crossed_finish_line = False
 
         return self.get_obs()
 
@@ -132,6 +136,16 @@ class CarEnv(gym.Env):
             self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
 
             print("Has Collided", self.rd.get_has_collided(self.Agent.get_bounding_box()))
+
+            # Check if the car has crossed the finish line
+            if self.road.get_intersect_finish_line(self.Agent):
+                if not self.crossed_finish_line:
+                    self.lap_count += 1
+                    pygame.display.flip()
+                    self.start_time = pygame.time.get_ticks()
+                    self.crossed_finish_line = True
+            else:
+                self.crossed_finish_line = False
             
             # todo: add rewards, penalties, game termination
 
@@ -193,17 +207,7 @@ class CarEnv(gym.Env):
         text_rect.bottomright = (WIDTH - 20, HEIGHT - 20)
         self.screen.blit(lap_time_text, text_rect)
 
-        # Display lap count
-        print("Agent x: ", self.Agent.x, "\tAgent y: ", self.Agent.y)
-        print("initial position: ", self.road.get_initial_position())
-        initial_pos = self.rd.get_initial_position()
-        agent_pos = (self.Agent.x, self.Agent.y)
-        
-        # Check if agent is within a 20x20 box of the initial position
-        if (initial_pos[0] - 10 <= agent_pos[0] <= initial_pos[0] + 10 and
-            initial_pos[1] - 10 <= agent_pos[1] <= initial_pos[1] + 10):
-            self.lap_count += 1
-            self.start_time = pygame.time.get_ticks()
+        # Lap count rendering
         lap_count_text = self.myfont.render(f"Lap Count: {self.lap_count}", False, WHITE)
         count_rect = lap_count_text.get_rect()
         count_rect.bottomright = (WIDTH - 40, HEIGHT - 40)

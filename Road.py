@@ -3,8 +3,7 @@ import pygame
 import generator
 from Constants import *
 from math_helpers import distance
-from shapely.geometry import Point
-from shapely.geometry.polygon import LineString
+from shapely.geometry import Point, LineString, Polygon
 
 
 class Road():
@@ -15,6 +14,7 @@ class Road():
         self.max_curvature = max_curvature
         self.track_number = track_number
         self.num_pts = num_pts
+        self.finish_line_coords = None
 
         self.reset()
 
@@ -36,6 +36,9 @@ class Road():
         # This is used for collision detection
         self.left_linestring = LineString(left_boundary_points)
         self.right_linestring = LineString(right_boundary_points)
+
+        # Save finish line coordinates
+        self.finish_line_coords = (self.left_boundary_points[0], self.right_boundary_points[0])
 
         # # tell whether car is inside road (does NOT work)
         # road_points = self.left_boundary_points + self.right_boundary_points[::-1]
@@ -60,15 +63,16 @@ class Road():
         pygame.draw.lines(screen, RED, False, self.right_boundary_points, 2)
         pygame.draw.lines(screen, BLUE, False, self.track_points, 2)
 
-        # Draw starting / finish line
-        pygame.draw.line(screen, GREEN, self.left_boundary_points[0], self.right_boundary_points[0], 5)
-
         # draw road points
         for i in range(len(self.left_boundary_points)):
             l,m,r = self.left_boundary_points[i], self.track_points[i], self.right_boundary_points[i]
             pygame.draw.circle(screen, RED, l, 4)
             pygame.draw.circle(screen, BLUE, m, 4)
             pygame.draw.circle(screen, RED, r, 4)
+        
+        # Draw starting / finish line
+        pygame.draw.line(screen, GREEN, self.left_boundary_points[0], self.right_boundary_points[0], 5)
+        self.finish_line_coords = (self.left_boundary_points[0], self.right_boundary_points[0])
 
     def get_initial_position(self):
         # Return the initial position of the car
@@ -83,4 +87,10 @@ class Road():
         return self.left_linestring.intersects(car) or self.right_linestring.intersects(
             car
         )
+    
+    def get_intersect_finish_line(self, car):
+        # Check if the car intersects with the finish line
+        car_box = Polygon(car.get_bounding_box())
+        finish_line = LineString(self.finish_line_coords)
+        return finish_line.intersects(car_box)
     

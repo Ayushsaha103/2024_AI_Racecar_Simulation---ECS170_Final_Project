@@ -1,8 +1,3 @@
-# Author: RsGoksel
-# pip install stable-baselines3 
-# pip install 'shimmy>=0.2.1'   
-
-
 print("Libraries Loading, please wait...")
 
 import sys

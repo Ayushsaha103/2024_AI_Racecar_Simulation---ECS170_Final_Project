@@ -169,7 +169,7 @@ class CarEnv(gym.Env):
 
         self.reward += 0.1*self.Agent.v     # reward for moving fast
 
-        ey, err_yaw = self.data[1], self.data[2]
+        ey, err_yaw = self.data[4], self.data[5]
         self.reward += 0.05*(-ey - err_yaw)     # penalize for not moving in direction of nearest track point
 
         # # collision detection

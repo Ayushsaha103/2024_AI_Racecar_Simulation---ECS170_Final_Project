@@ -1,29 +1,55 @@
 import os
+from math import sin, cos, pi, sqrt
+from random import randrange
 
 import pygame
 from pygame.locals import *
 
 import numpy as np
-import gymnasium as gym
-from gymnasium import spaces
+import gym
+from gym import spaces
 
 from Constants import *
 from Agent import *
 from Road import *
 from Waypoints import *
 from math_helpers import find_ey
+# from metrics import plot
 import math
+from general_helpers import *
+import time
 
 os.system('cls' if os.name == 'nt' else 'clear') # Cleaning library loading information texts
 print("Fetching Libraries.. Please Wait..")
+
+
 
 ################################################################################################
 # Car Env Class
 ################################################################################################
 
 class CarEnv(gym.Env):
+    ############ KEY INIT. FUNC ############
+
     def __init__(self):
         super(CarEnv, self).__init__()
+
+        self.num_rewards = 3
+        self.game_cnt = -1
+        self.frame_cnt = -1
+        self.START_TIME = time.time()
+
+        self.init_pygame_display()
+        self.init_action_obs_spaces()
+        self.init_history_variable()
+        self.init_lap_counting_vars()
+
+        # ADDED variables
+        self.reset()
+
+    ############ VARIABLE INIT. FUNCTIONS BELOW ############
+
+    def init_pygame_display(self):
         pygame.init()
         
         # VIDEO SETTINGS
@@ -34,72 +60,89 @@ class CarEnv(gym.Env):
         pygame.font.init()
         self.myfont = pygame.font.SysFont("Comic Sans MS", 20)
 
-        # Physical CONSTANTS
-        self.FPS         =  Constants.FPS
+    def init_lap_counting_vars(self):
+        # Lap count/time variables
+        self.start_time = pygame.time.get_ticks()       # Start lap timer
+        self.lap_count = -1          # Start lap counter
+        self.crossed_finish_line = False        # Lap crossed boolean
 
-        # GAME CONFIGURE
-        self.reward = 0
-        # self.time   = 0
-        # self.pace   = 0
-        # self.time_limit = 20
-        # self.target_counter = 0
-
-        # Agent SETTINGS
-        self.Agent       = Car()
-        self.Agent_image = spriter("Car")
-        
+    def init_action_obs_spaces(self):
         # GYM CONFIGURE
-        self.action_space      = gym.spaces.Discrete(9)
+        self.action_space      = gym.spaces.Discrete(5)
         obs_size = 5 + (NUM_WAYPOINTS * 4)
         self.data = np.array([0]*obs_size)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float16)
         self.info = {}
         Constants.report(self)
 
-        # Initialize Road
-        self.road = Road()
-
-        # Start lap timer
-        self.start_time = pygame.time.get_ticks()
-
-        # Start lap counter
-        self.lap_count = 0
+    def init_history_variable(self):
+        # data plotting variables
+        self.history = {
+            "frame": [],
+            "game_cnt": [],
+            "time": [],
+            "v": [],
+            "ey": [],
+            "ephi": [],
+            "s": [],
+            "reward": [],
+        }
+        self.reward_components = [0] * self.num_rewards
+        for i in range(self.num_rewards):
+            self.history["reward_component" + str(i)] = []
+        self.DATA_SAVING_TIMER_START = time.time()      # used to determine when to save history to file
         
-        # ADDED variables
-        self.reset()
+    ############ VARIABLE RESET FUNCTIONS BELOW ############
 
-    # reset the game
-    def reset(self):
-        # re-initialize road and waypoints objects
-        self.rd = Road()           # road object
-        self.wp = Waypoints(NUM_WAYPOINTS, self.rd, self.Agent)        # waypoints (target points) object
-        self.closest_track_coor = self.rd.orig_track_pts[(self.wp.closest_pt)]
-        
+    def save_and_reset_history_data(self):
+        # every time_gap [mins], we'll save & reset history data
+        # import pdb; pdb.set_trace()
+        if (time.time() - self.DATA_SAVING_TIMER_START) / 60 > DATA_SAVING_TIME_GAP:
+            self.DATA_SAVING_TIMER_START = time.time()
+            dict_to_csv("history.csv", self.history)
+            self.init_history_variable()
+
+    def reset_car_pos(self):
         # reset car position and controlling variables
         inital_pos = self.rd.get_initial_position()
         initial_yaw = self.rd.get_initial_yaw()
         self.Agent.reset(inital_pos[0], inital_pos[1], initial_yaw)
         self.throttle, self.delta = 0,0
+
+
+    ############ ALL THE FAMILIAR/ KEY-IMPORTANT FUNCTIONS BELOW ############
+
+    # reset the game
+    def reset(self):
+        # re-initialize Agent
+        self.Agent       = Car()
+        self.Agent_image = spriter("Car")
+
+        # re-initialize road and waypoints objects
+        self.rd = Road()           # road object
+        self.wp = Waypoints(NUM_WAYPOINTS, self.rd, self.Agent)        # waypoints (target points) object
+        self.closest_track_coor = self.rd.orig_track_pts[(self.wp.closest_pt)]
         
-        self.action = 0
-        # reset general game state counters
-        # self.target_counter = 0
-        self.reward = 0
-        # self.time   = 0
+        # reset car position & speed
+        self.reset_car_pos()
+        
+        # general agent control vars
+        self.action = 0; self.reward = 0
 
         # Reset lap timer
-        self.start_time = 0
-
-        return self.get_state()
+        self.start_time = pygame.time.get_ticks()
+        self.crossed_finish_line = False
+        self.lap_count = -1          # Start lap counter
+        
+        # save/reset history data every few mins
+        self.save_and_reset_history_data()
+        self.game_cnt += 1      # increment game cnt
+        
+        return self.get_obs()
 
     # return the state of the game (so Agent knows its surroundings)
-    # Agent x and y coordinates
-    # Agent velocity
-    # Agent steering angle
-    # distance error and angle disance error to nearest Waypoint
-    # list of distances to nearest Waypoints
-    # list of angles to nearest Waypoints
-    def get_state(self) -> np.ndarray:
+    def get_obs(self) -> np.ndarray:
+
         # get distance, angle to all waypoints
         wp_distances = []
         wp_angles = []
@@ -118,89 +161,148 @@ class CarEnv(gym.Env):
             wp_angles += [wp1_angle, wp2_angle]
         
         # get ey, ephi to the NEAREST coordinate within track
+        n = len(self.rd.orig_track_pts)
         wp_coors = [ self.rd.orig_track_pts[(self.wp.closest_pt-1) % n], self.rd.orig_track_pts[(self.wp.closest_pt) % n], self.rd.orig_track_pts[(self.wp.closest_pt + 1) % n] ]
         car_pos = (self.Agent.x, self.Agent.y)
         ey, nearest_wps, self.closest_track_coor = find_ey(car_pos, wp_coors)
         (wp1_x, wp1_y), (wp2_x, wp2_y) = nearest_wps
         wp_yaw = np.arctan2(wp2_y - wp1_y, wp2_x - wp1_x)
         ephi = wp_yaw - self.Agent.yaw
-        s, wz = self.Agent.traveled, self.Agent.wz
+        # get s, wz
+        s, wz = self.wp.rd_dist_traversed, self.Agent.wz
+        self.data = [self.Agent.v, ey, ephi] + [s, wz] + wp_distances + wp_angles
 
-        self.data = [self.Agent.x, self.Agent.y, self.Agent.v, self.Agent.yaw, ey, ephi, s, wz] + wp_distances + wp_angles
+        # historical data/info accumulation
+        if self.frame_cnt % FRAME_SEP == 0:
+            # time counting vars
+            if len(self.history["frame"]) == 0:
+                self.history["frame"].append(0)
+                
+            else:
+                self.history["frame"].append(self.history["frame"][-1]+FRAME_SEP)
+            self.history["game_cnt"].append(self.game_cnt)
+            self.history["time"].append(round(time.time() - self.START_TIME, 2))
+            
+            # car data vars
+            self.history["v"].append((30/3.3) * self.Agent.v)
+            self.history["ey"].append((1/3.3) * ey)
+            self.history["ephi"].append(ephi)
+            self.history["s"].append((1/3.3) * s)
+
+            # add reward data info to history
+            self.history["reward"].append(self.reward)
+            for i in range(len(self.reward_components)):
+                self.history["reward_component" + str(i)].append(self.reward_components[i])
+
         return np.array(self.data).astype(np.float16)
 
     # single timestep update of game
     def step(self, action):
         
         self.render()
+        # self.frame_cnt += 1
         self.reward = 0.0
-        # self.pace += 1
-        # self.pace %= 20
         
         # choose controlling action to either be self.action (manual) or action (agent-controlled)
         ctrl_action = int(action)       # agent control
-        # ctrl_action = self.action       # manual control
+        # ctrl_action = self.action     # manual control
         
         # Act every x frames. Range can be altered. 
         for _ in range(1):
-            # self.time += 1 / Constants.FPS
-
             # specify agent operations for certain values of A2C's output 'action'
-            if ctrl_action < 3:
-                self.throttle = 0
-            elif ctrl_action < 6:       # increase throttle force
-                self.throttle = min(max_throttle, self.throttle + 0.01)
-            else:                       # decrease throttle force
-                self.throttle = max(-max_throttle, self.throttle - 0.01)
-            if ctrl_action % 3 == 1:    # increase delta angle
-                self.delta = min(max_steer, self.delta + np.radians(0.5))
-            elif ctrl_action % 3 == 2:  # decrease delta angle
-                self.delta = max(-max_steer, self.delta - np.radians(0.5))
-            else:
+            if ctrl_action == 0:         # do nothing
                 self.delta = 0
+                self.throttle = 0
+            elif ctrl_action == 1:       # increase throttle force
+                self.throttle = min(max_throttle, self.throttle + 0.005)
+            elif ctrl_action == 2:       # decrease throttle force
+                self.throttle = max(-max_throttle, self.throttle - 0.005)
+            elif ctrl_action == 3:       # increase delta angle
+                self.delta = min(max_steer, self.delta + np.radians(.4))
+            elif ctrl_action == 4:       # decrease delta angle
+                self.delta = max(-max_steer, self.delta - np.radians(.4))
     
             # UPDATE CAR POSITION
             # self.Agent.pidv(7, self.delta)        # constant speed update
             self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
-            # print([self.throttle, self.delta, self.Agent.v])        # show action info
+            # print([self.Agent.v])        # show action info
         
-        # rewards
-        # self.reward += 1/FPS        # reward for surviving
+        # update road and waypoints
+        player_x_trans = AGENTX - self.Agent.x
+        player_y_trans = AGENTY - self.Agent.y
+        self.rd.update(player_x_trans, player_y_trans)
+        amt_wps_updated = self.wp.update()      # wps_updated is an int score for the wp update in the range [-1,0,1]
 
-        self.reward += 0.1*self.Agent.v     # reward for moving fast
-
+        # rewards -> NOTE: if you update self.reward_components, MAKE SURE TO also update self.num_rewards
         ey, err_yaw = self.data[1], self.data[2]
-        self.reward += 0.05*(-ey - err_yaw)     # penalize for not moving in direction of nearest track point
+        self.reward_components = [0.02*(-ey), 0.03*(-err_yaw), 20*amt_wps_updated]
+        self.reward += sum(self.reward_components)
+        # 1/FPS        # reward for surviving
+        # 0.1*self.Agent.v     # reward for moving fast
+
+        # Check if the car has crossed the finish line
+        if self.rd.get_intersect_finish_line(self.Agent):
+            if not self.crossed_finish_line:
+                self.lap_count += 1
+                pygame.display.flip()
+                self.start_time = pygame.time.get_ticks()
+                self.crossed_finish_line = True
+        else: self.crossed_finish_line = False
 
         # # collision detection
         if self.rd.get_has_collided(self.Agent.get_bounding_box()):
-            self.reward -= 400      # collision penalty
+            self.reward -= 90      # collision penalty
             done = True
-            return self.get_state(), self.reward, done, self.info
+            return self.get_obs(), self.reward, done, self.info
 
-        return self.get_state(), self.reward, False, self.info
+        self.frame_cnt += 1     # increment frame counter
+        return self.get_obs(), self.reward, False, self.info
     
     # render entire game to the screen
+    # def render_text(self, text, bottom_right_coors):
+    #     x, y = bottom_right_coors
+    #     my_text = self.myfont.render(text, False, WHITE)
+    #     text_rect = my_text.get_rect()
+    #     text_rect.bottomright = (x, y)
+    #     self.screen.blit(my_text, text_rect)
+
+    # render text & value to the pygame screen
+    def render_text_and_value(self, label, val, bottom_right_coors):
+        # generate string for label & val
+        if not isinstance(val, int):
+            text = label + ": " + str(round(val, 2))
+        else: text = label + ": " + str(val)
+
+        # show the text
+        x, y = bottom_right_coors
+        my_text = self.myfont.render(text, False, WHITE)
+        text_rect = my_text.get_rect()
+        text_rect.bottomright = (x, y)
+        self.screen.blit(my_text, text_rect)
+
+    # render all items to the screen
     def render(self):
         # get user key inputs
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:       # check if user quit
+            if event.type == pygame.K_SPACE or event.type == pygame.QUIT:       # check if user quit
                 pygame.display.quit()
                 pygame.quit()
+                dict_to_csv("history.csv", self.history)
                 del(self)
                 quit()
             # MANUAL keystroke car-control inputs
             keys = pygame.key.get_pressed()
-            if keys[K_w]:    # Accelerate
-                self.action = 3
+            if keys[K_w]:  # Accelerate
+                self.action = 1
             elif keys[K_s]:  # Brake
-                self.action = 6
+                self.action = 2
+            elif keys[K_a]:  # Right
+                self.action = 3
+            elif keys[K_d]:  # Left
+                self.action = 4
             else:
                 self.action = 0
-            if keys[K_a]:    # Right
-                self.action += 1
-            elif keys[K_d]:  # Left
-                self.action += 2
+
 
         # fill screen black
         self.screen.fill(BLACK)
@@ -209,10 +311,9 @@ class CarEnv(gym.Env):
         player_x_trans = AGENTX - self.Agent.x
         player_y_trans = AGENTY - self.Agent.y
 
-        # draw road
-        self.rd.update_and_draw(self.screen, player_x_trans, player_y_trans)
-        # draw waypoints
-        self.wp.update_and_draw(self.screen, pt_size=4)
+        self.rd.draw(self.screen, player_x_trans, player_y_trans)       # draw road
+        self.wp.draw(self.screen)       # draw waypoints
+        
         # draw line to nearest track coor
         translated_closest_track_coor = (self.closest_track_coor[0]+player_x_trans, self.closest_track_coor[1]+player_y_trans)
         pygame.draw.line(self.screen, GREEN, translated_closest_track_coor, (AGENTX, AGENTY), 3)
@@ -228,40 +329,18 @@ class CarEnv(gym.Env):
         ## Update the display
         self.screen.blit(pygame.transform.flip(self.screen, False, True), (0, 0))     # mirror screen vertical
 
-        # # print info to screen
-        # textsurface = self.myfont.render("Collected: " + str(self.target_counter), False, WHITE)
-        # textsurface3 = self.myfont.render("Time: " + str(int(self.time)), False, WHITE)
-        # self.screen.blit(textsurface, (20, 20))
-        # self.screen.blit(textsurface3, (20, 50))
-
         # Display lap time
         elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000  # in seconds
-        lap_time_text = self.myfont.render(f"Lap Time: {elapsed_time:.2f}s", False, WHITE)
-        text_rect = lap_time_text.get_rect()
-        text_rect.bottomright = (WIDTH - 20, HEIGHT - 20)
-        self.screen.blit(lap_time_text, text_rect)
-
-        # # Display lap count
-        # print("Agent x: ", self.Agent.x, "\tAgent y: ", self.Agent.y)
-        # print("initial position: ", self.road.get_initial_position())
-        initial_pos = self.rd.get_initial_position()
-        agent_pos = (self.Agent.x, self.Agent.y)
+        self.render_text_and_value("elapsed time", elapsed_time, (WIDTH - 40, HEIGHT - 20))
+        self.render_text_and_value("lap count", self.lap_count, (WIDTH - 40, HEIGHT - 40))
+        self.render_text_and_value("reward", self.reward, (WIDTH - 40, HEIGHT - 60))
+        self.render_text_and_value("game count", self.game_cnt, (WIDTH - 40, HEIGHT - 80))
         
-        # Check if agent is within a 10x10 box of the initial position
-        if (initial_pos[0] - 5 <= agent_pos[0] <= initial_pos[0] + 5 and
-            initial_pos[1] - 5 <= agent_pos[1] <= initial_pos[1] + 5):
-            self.lap_count += 1
-            self.start_time = pygame.time.get_ticks()
-        lap_count_text = self.myfont.render(f"Lap Count: {self.lap_count}", False, WHITE)
-        count_rect = lap_count_text.get_rect()
-        count_rect.bottomright = (WIDTH - 40, HEIGHT - 40)
-        self.screen.blit(lap_count_text, count_rect)
-
-
+        # plot(self.speeds, self.dists_from_center, self.rewards)
 
         pygame.display.flip()       # update display
         #pygame.display.update()
-        #self.FramePerSec.tick(self.FPS)
+        #self.FramePerSec.tick(FPS)
 
     def close(self):
         pass

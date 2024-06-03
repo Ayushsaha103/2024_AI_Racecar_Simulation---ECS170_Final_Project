@@ -1,5 +1,8 @@
+
 import math
 import numpy as np
+
+
 
 ############################################################################################################
 # waypoints
@@ -41,10 +44,17 @@ def distance_from_line(p1, p2, given_point):
         return distance
     else: return -distance
 
+# min dist between indices i, j in array (length n)
+def min_distance(i, j, n):
+    clockwise_distance = abs(j - i)
+    counter_clockwise_distance = n - clockwise_distance
+    return min(clockwise_distance, counter_clockwise_distance)
+
 
 ############################################################################################################
 # road lanes
 ############################################################################################################
+
 
 # add 2 vectors
 def add(p1, p2):
@@ -148,7 +158,6 @@ def closest_point_on_segment(p, a, b):
     t = np.dot(ap, ab) / np.dot(ab, ab)
     t = np.clip(t, 0, 1)
     return a + t * ab
-
 def find_ey(car_pos, xy_pairs):
     car_pos = np.array(car_pos)
     min_distance = float('inf')
@@ -172,3 +181,5 @@ def find_ey(car_pos, xy_pairs):
 # xy_pairs = [(1, 0), (2, 3), (3, 5)]
 # car_pos = (1.25, 1)
 # min_distance, segment, closest_point = find_nearest_segment(car_pos, xy_pairs)
+
+

@@ -14,14 +14,18 @@ class Waypoints():
         # references to road and car objects
         self.rd = rd
         self.car = car
+        self.rd_dist_traversed = 0
         
-
+    # update & draw the waypoints obj
     def update_and_draw(self, screen, pt_size=4):
-        self.update()
+        num_idxs_updated = self.update()     # this value indicates the number of progressive steps taken forward by the entire waypoints system
         self.draw(screen, pt_size)
+        return num_idxs_updated
 
-    # update which points on the track are the waypoints
+    # update the waypoints
+    # return the number of progressive indices moved forward
     def update(self):
+        idxs_updated = 0
         n = len(self.rd.translated_track_pts)
         car_pos = (AGENTX, AGENTY)
         mindist = 999999999999
@@ -34,7 +38,19 @@ class Waypoints():
                 mindist = d
                 closest_idx = i
         # set "self.closest_pt" as the closest track index
-        self.closest_pt = closest_idx
+        if self.closest_pt != closest_idx:
+            idxs_updated = min_distance(self.closest_pt, closest_idx, n)
+            stepwise_dist_traversed = distance(self.rd.translated_track_pts[self.closest_pt % n], self.rd.translated_track_pts[closest_idx % n])
+
+            if self.closest_pt > closest_idx and not (self.closest_pt > 0.75*n and closest_idx < 0.25*n):
+                idxs_updated *= (-1)
+                stepwise_dist_traversed *= (-1)
+            self.rd_dist_traversed += stepwise_dist_traversed
+            
+            self.closest_pt = closest_idx
+            
+
+        return idxs_updated     # num. of indices the waypoints obj has moved by
     
     # draw the waypoints onto the screen
     def draw(self, screen, pt_size=4):

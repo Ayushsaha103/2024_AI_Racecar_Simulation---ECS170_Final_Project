@@ -12,7 +12,7 @@ import logging
 
 import Constants
 
-from stable_baselines3 import A2C, PPO, DQN
+from stable_baselines3 import A2C #PPO, DQN also can be used 
 
 from env import CarEnv
 env = CarEnv()
@@ -32,7 +32,7 @@ try:
     # In addition to PPO, A2C and DQN are also viable options.
 
     # initialize model
-    model = PPO('MlpPolicy',
+    model = A2C('MlpPolicy',
                env,
                learning_rate   = learning_rate,
                ent_coef        = ent_coef, 

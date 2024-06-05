@@ -46,7 +46,7 @@ class Car(pygame.sprite.Sprite):
     # init.
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        # self.pedals = PID(0.8,0.1,0.05, 6)      # pid controller initialization (this is a controller used to maintain const. velocity)
+        self.pedals = PID(0.8,0.1,0.05, 6)      # pid controller initialization (this is a controller used to maintain const. velocity)
         self.reset()
 
     # reset car position, speed, and yaw
@@ -58,12 +58,13 @@ class Car(pygame.sprite.Sprite):
         self.tot_dist_traveled = 0
         self.wz = 0
         self.prev_yaws = [yaw]*4
+        self.delta = 0
         # self.pedals.reset()
 
-    # # update the car position so as to maintain const. velocity
-    # def pidv(self, vset, delta):
-    #     throttle = 1*self.pedals.push(self.v,vset)
-    #     self.update(throttle,delta)
+    # update the car position so as to maintain const. velocity
+    def pidv(self, vset, delta):
+        throttle = 1*self.pedals.push(self.v,vset)
+        self.update(throttle,delta)
 
     # update the car position, given throttle reset_posforce & delta
     def update(self, throttle, delta):
@@ -85,6 +86,7 @@ class Car(pygame.sprite.Sprite):
         self.prev_yaws.append(self.yaw)
         # self.wz = yaw_del       # todo: change this to be an average of the last few yaw_del's
         self.wz = calc_av_dyaw_dt(self.prev_yaws)
+        self.delta = delta
 
         return throttle
 

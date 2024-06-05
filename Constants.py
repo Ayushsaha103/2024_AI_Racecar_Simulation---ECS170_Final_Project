@@ -1,20 +1,17 @@
 import os
 import pygame
 
+
 # Window CONFIGURE
 WIDTH, HEIGHT = 600, 600
 # TIME_LIMIT    = 60  #How many seconds will it take for one episode?
+NUM_WAYPOINTS = 2
+OBS_SIZE = 6
+NUM_REWARDS = 4
 
 # ADDED
 AGENTX = WIDTH/2
 AGENTY = HEIGHT/2
-NUM_WAYPOINTS = 10
-
-# Physical CONSTANTS
-FPS         = 5
-FRAME_SEP   = 12                # [num. frames incremented before each data save]
-DATA_SAVING_TIME_GAP    = 3.0     # [min]
-
 
 # Define colors
 WHITE = (255, 255, 255)
@@ -29,11 +26,14 @@ VIOLET = (238, 130, 238)
 
 # Model.learn - Hyperparameter Configure
 total_timesteps = 300000 #300k
-learning_rate  = 0.0005 #0.004 (4*10^-3) recommended
+learning_rate  = 0.004 #0.004 (4*10^-3) recommended
 ent_coef       = 0.01 
 gamma          = 0.99 
 gae_lambda     = 0.95
 max_grad_norm  = 0.5
+
+# Physical CONSTANTS
+FPS         = 10
 
 # Model Configure 
 Model_Save_Path = "./models/" + str(int(total_timesteps/1000)) + "k.zip"  

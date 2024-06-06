@@ -65,13 +65,13 @@ def find_ephi(wp_yaw, car_yaw):
     return yaw_diff
 
 # return True if v1 is facing within pi/2 of the same facing direction as v2
-def is_vect_facing_along(v1, v2):
+def abs_angle_btwn_vects(v1, v2):
     [(v1x, v1y), (v1x_, v1y_)] = v1
     [(v2x, v2y), (v2x_, v2y_)] = v2
     yaw1 = np.arctan2(v1y_-v1y,v1x_-v1x)
     yaw2 = np.arctan2(v2y_-v2y,v2x_-v2x)
     yaw_diff = min_distance(yaw1, yaw2, 2*np.pi)
-    return abs(yaw_diff) < np.pi/2
+    return abs(yaw_diff)
 
 # distance between 2 points
 def distance(point1, point2):

@@ -1,13 +1,16 @@
 import os
 import pygame
 
+# one-wp agents train faster, but are less able to make sharper turns at high speeds
+# three-wp and 5-wp agents train slower 
 
 # Window CONFIGURE
 WIDTH, HEIGHT = 600, 600
 # TIME_LIMIT    = 60  #How many seconds will it take for one episode?
-NUM_WAYPOINTS = 2
-OBS_SIZE = 6
+NUM_WAYPOINTS = 3
+OBS_SIZE = 2 + NUM_WAYPOINTS*2
 NUM_REWARDS = 4
+modelname = "state_with_three_wp_and_v_edelta" + ".zip"
 
 # ADDED
 AGENTX = WIDTH/2
@@ -25,8 +28,8 @@ INDIGO = (75, 0, 130)
 VIOLET = (238, 130, 238)
 
 # Model.learn - Hyperparameter Configure
-total_timesteps = 300000 #300k
-learning_rate  = 0.004 #0.004 (4*10^-3) recommended
+total_timesteps = 150000 #300k
+learning_rate  = 0.0005 #0.004 (4*10^-3) recommended
 ent_coef       = 0.01 
 gamma          = 0.99 
 gae_lambda     = 0.95
@@ -35,8 +38,21 @@ max_grad_norm  = 0.5
 # Physical CONSTANTS
 FPS         = 10
 
-# Model Configure 
-Model_Save_Path = "./models/" + str(int(total_timesteps/1000)) + "k.zip"  
+# Model Configure
+Model_Save_Path = "./models/" + modelname
+print("Your model will be saved as: " + Model_Save_Path)
+
+def get_updated_Model_Save_Path(modelname):
+    i = 0
+    while os.path.exists("./models/" + modelname):
+        modelname = modelname[:-4] + str(i+1) + ".zip"
+        i += 1
+        
+    Model_Save_Path = "./models/" + modelname
+    print("Your model will be saved as: " + Model_Save_Path)
+    return Model_Save_Path
+
+
 # Indicates the model path which will save after the training, 
 
 tensorboard_log = "./DroneLog/"
@@ -46,16 +62,13 @@ tensorboard_sub_folder = 'new_training' + str(total_timesteps/1000) + "k"
 BACKGROUND = "assets/sky.png"
 
 # Takes multiple image and provide animation in the game
+CAR_WIDTH = 80/10
+CAR_HEIGHT = (8/30) * 621 / 10
 def spriter(Type):
     if Type == "Car":
-        image_width = 80 / 10
-        image_height = (8/30) * 621 / 10
+        image_width = CAR_WIDTH
+        image_height = CAR_HEIGHT
         image_path = "./assets/Drone/"
-
-    elif Type == "Baloon":
-        image_width = 30
-        image_height = int(image_width * 1.7)
-        image_path = "./assets/Baloon/"
 
     player = []
 

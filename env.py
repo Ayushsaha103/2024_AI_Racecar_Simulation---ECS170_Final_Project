@@ -9,6 +9,7 @@ import numpy as np
 import gym
 from gym import spaces
 
+import Constants
 from Constants import *
 from Agent import *
 from Road import *
@@ -17,6 +18,7 @@ from math_helpers import *
 from obs_data import *
 from timer import *
 from rewards_data import *
+from Training_dojo import *
 import math
 
 
@@ -49,14 +51,15 @@ class CarEnv(gym.Env):
         # self.reward = 0
 
         # initialize agent, road, waypoints, car, obs_data, and rewards_data
-        self.Agent       = Car()
-        self.Agent_image = spriter("Car")
+        self.car       = Car()
+        self.car_image = spriter("Car")
 
         self.rd = Road()           # road object
-        self.wp = Waypoints(NUM_WAYPOINTS, self.rd, self.Agent)        # waypoints (target points) object
-        self.obs = Obs_data(self.rd, self.wp, self.Agent, OBS_SIZE)
+        self.wp = Waypoints(NUM_WAYPOINTS, self.rd, self.car)        # waypoints (target points) object
+        self.obs = Obs_data(self.rd, self.wp, self.car, OBS_SIZE)
         self.tim = Timer()
-        self.rw = Rewards_data(self.obs, self.tim, NUM_REWARDS)
+        # self.rw = Rewards_data(self.obs, self.car, self.tim, NUM_REWARDS)
+        self.dojo = Training_dojo(self.rd, self.wp, self.car, self.obs, self.tim)
         
         # GYM CONFIGURE
         self.action_space      = gym.spaces.Discrete(5)
@@ -74,17 +77,18 @@ class CarEnv(gym.Env):
         self.wp.reset()
         self.obs.reset()
         self.tim.reset()
-        self.rw.reset()
+        # self.rw.reset()
+        self.dojo.reset()
 
         # reset car position
         inital_pos = self.rd.get_initial_position()
         initial_yaw = self.rd.get_initial_yaw()
-        self.Agent.reset(inital_pos[0], inital_pos[1], initial_yaw)
+        self.car.reset(inital_pos[0], inital_pos[1], initial_yaw)
         
         # car/game control variables
         self.throttle, self.delta = 0,0
         self.action = 0
-        # self.reward = 0
+        self.reward = 0
 
         return self.get_obs()
 
@@ -117,22 +121,24 @@ class CarEnv(gym.Env):
                 self.delta = max(-max_steer, self.delta - np.radians(.4))
     
             # UPDATE CAR POSITION
-            # self.Agent.pidv(0.6, self.delta)        # constant speed update
-            self.throttle = self.Agent.update(self.throttle, self.delta)       # standard update
+            self.car.pidv(self.dojo.vary_speed(), self.delta)        # constant speed update
+            # self.throttle = self.car.update(self.throttle, self.delta)       # standard update
             
             # update road & waypoints
             self.rd.update()
             self.wp.update()
 
             # check collision
-            if self.rd.check_collision(self.Agent):
-                print("COLLISION!")
+            if self.rd.check_collision(self.car) or self.dojo.terminate():
+                # print("COLLISION!")
                 done = True
-                return self.get_obs(), self.rw.collision_reward(), done, self.info
-            
-            # increment reward value
-            
-        return self.get_obs(), self.rw.get_reward(), False, self.info
+                return self.get_obs(), self.dojo.collision_reward(), done, self.info
+        
+        # update reward value
+        # self.reward = self.rw.get_reward()
+        # return self.get_obs(), self.rw.get_reward(), False, self.info
+        self.reward = self.dojo.reward()
+        return self.get_obs(), self.reward, False, self.info
     
     # render text & value to the pygame screen
     def render_text_and_value(self, label, val, bottom_right_coors):
@@ -173,16 +179,16 @@ class CarEnv(gym.Env):
         self.screen.fill(BLACK)
         
         # get player's transformed coordinates
-        player_x_trans = AGENTX - self.Agent.x
-        player_y_trans = AGENTY - self.Agent.y
+        player_x_trans = AGENTX - self.car.x
+        player_y_trans = AGENTY - self.car.y
 
         # draw road
         self.rd.draw(self.screen, player_x_trans, player_y_trans)
         # draw waypoint
         self.wp.draw(self.screen, player_x_trans, player_y_trans)
         # draw player
-        player_sprite = self.Agent_image[0]
-        player_copy   = pygame.transform.rotate(player_sprite, -math.degrees(self.Agent.yaw + (np.pi/2)))
+        player_sprite = self.car_image[0]
+        player_copy   = pygame.transform.rotate(player_sprite, -math.degrees(self.car.yaw + (np.pi/2)))
         self.screen.blit( player_copy, (
             AGENTX - int(player_copy.get_width() / 2),
             AGENTY - int(player_copy.get_height() / 2),
@@ -193,8 +199,8 @@ class CarEnv(gym.Env):
 
         # display relevant info to screen
         self.render_text_and_value("game time", self.tim.get_time_elapsed("game"), (WIDTH - 40, HEIGHT - 20))
-        # self.render_text_and_value("lap count", self.lap_count, (WIDTH - 40, HEIGHT - 40))
-        self.render_text_and_value("reward", self.rw.reward_val, (WIDTH - 40, HEIGHT - 60))
+        self.render_text_and_value("speed", self.dojo.vset, (WIDTH - 40, HEIGHT - 40))
+        self.render_text_and_value("reward", self.reward, (WIDTH - 40, HEIGHT - 60))
         
 
         pygame.display.flip()       # update display

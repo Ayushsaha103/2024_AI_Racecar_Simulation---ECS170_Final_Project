@@ -1,9 +1,10 @@
 from shapely.geometry import Point
 from shapely.geometry.polygon import LineString
 from shapely.geometry import Polygon
-from math_helpers import distance
+from math_helpers import distance, fit_exponential_through_points
 import numpy as np
 import random
+import math
 
 # Training dojo
 # systems to constrain the car's motion and actions
@@ -17,20 +18,19 @@ class Training_dojo:
         self.obs = obs
         self.tim = tim
         self.vset = 0.5
-        self.carminv = 0.3
-        self.carmaxv = 1.04
+        self.carminv = 0.5
+        self.carmaxv = 0.8
+        max_curv = 0.8
+
+        self.vset = (self.carmaxv + self.carminv)/2
+        self.train_mode = "steer"
+        self.m_for_v_ctrl, self.b_for_v_ctrl = fit_exponential_through_points((0.0, self.carmaxv),(max_curv, self.carminv))
+        self.cur_rd_curvature = self.rd.max_curvature / 2
 
     def vary_speed(self):
-        # every 12 sec, vary the speed
-        if int(self.tim.get_time_elapsed("game")) % 12 == 0:
-            vset_update = 0.16
-            vset_update *= random.randint(0, 1) * 2 - 1
-            if (
-                self.vset + vset_update < self.carminv
-                or self.vset + vset_update > self.carmaxv
-            ):
-                vset_update *= -1
-            self.vset = np.clip(self.vset + vset_update, self.carminv, self.carmaxv)
+        self.cur_rd_curvature = abs(self.rd.curvature_normalized[(self.wp.first_target_pt)])
+        self.vset = \
+            self.m_for_v_ctrl * math.exp(-self.b_for_v_ctrl * self.cur_rd_curvature)
         return self.vset
 
     def check_car_overlies_wp(self):

@@ -77,6 +77,51 @@ def abs_angle_btwn_vects(v1, v2):
 def distance(point1, point2):
     return math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
 
+############################################################################################################
+# Training_dojo
+############################################################################################################
+
+def line_segment_slope_intercept(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    
+    # Calculate slope
+    m = (y2 - y1) / (x2 - x1)
+    
+    # Calculate y-intercept
+    b = y1 - m * x1
+    
+    return m, b
+def fit_exponential_through_points(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    
+    # Calculate b
+    b = -math.log(y2 / y1) / (x2 - x1)
+    
+    # Calculate a
+    a = y1 / math.exp(-b * x1)
+    
+    return a, b
 
 
+############################################################################################################
+# Road
+############################################################################################################
 
+def compute_curvature(track_pts):
+    x = np.array(track_pts)[:,0]
+    y = np.array(track_pts)[:,1]
+
+    # Compute first derivatives
+    dx_dt = np.gradient(x)
+    dy_dt = np.gradient(y)
+    
+    # Compute second derivatives
+    d2x_dt2 = np.gradient(dx_dt)
+    d2y_dt2 = np.gradient(dy_dt)
+    
+    # Compute curvature
+    curvature = np.abs(dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**(3/2)
+    
+    return curvature

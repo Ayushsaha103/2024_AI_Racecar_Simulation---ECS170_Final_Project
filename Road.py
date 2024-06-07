@@ -4,13 +4,13 @@ import pygame
 import generator
 import random
 from Constants import *
-from math_helpers import distance
+from math_helpers import distance, compute_curvature
 from shapely.geometry import Point
 from shapely.geometry.polygon import LineString
 from shapely.geometry import Polygon
 
 class Road():
-    def __init__(self, track_length=1000, track_width=60, num_curves=25, max_curvature=0.07, track_number=42, num_pts=750):
+    def __init__(self, track_length=1000, track_width=60, num_curves=25, max_curvature=0.07, track_number=42, num_pts=450):
         self.track_length = track_length
         self.track_width = track_width
         self.num_curves = num_curves
@@ -22,29 +22,42 @@ class Road():
 
     def reset(self):
         self.done = False
-        self.track_number = random.randint(1,50)
-        # generate the original track points
-        self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
-        self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
+        # every 10 games, regenerate track
+        try:
+            dummy_var = self.track
+            if random.randint(0,10) == 0: assert(False)
+        except:
+            # generate the original track points
+            self.track_number = random.randint(1,50)
+            self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
+            self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
 
-        # generate the non-translated track points
-        self.track_points = np.array([(x, y) for x, y in zip(self.x_fine, self.y_fine)])
-        self.left_boundary_points = np.array([(x, y) for x, y in zip(self.left_boundary_x, self.left_boundary_y)])
-        self.right_boundary_points = np.array([(x, y) for x, y in zip(self.right_boundary_x, self.right_boundary_y)])
+            # generate the non-translated track points
+            self.track_points = np.array([(x, y) for x, y in zip(self.x_fine, self.y_fine)])
+            self.left_boundary_points = np.array([(x, y) for x, y in zip(self.left_boundary_x, self.left_boundary_y)])
+            self.right_boundary_points = np.array([(x, y) for x, y in zip(self.right_boundary_x, self.right_boundary_y)])
 
-        # Create separate linestrings for the left and right boundaries
-        # This is used for collision detection
-        self.left_linestring = LineString(self.left_boundary_points)
-        self.right_linestring = LineString(self.right_boundary_points)
+            # Create separate linestrings for the left and right boundaries
+            # This is used for collision detection
+            self.left_linestring = LineString(self.left_boundary_points)
+            self.right_linestring = LineString(self.right_boundary_points)
 
-        # save the original non-translated track points into road points
-        road_points = self.left_boundary_points + self.right_boundary_points[::-1]
-        self.rd_pts_polygon = Polygon(road_points)
+            # save the original non-translated track points into road points
+            road_points = self.left_boundary_points + self.right_boundary_points[::-1]
+            self.rd_pts_polygon = Polygon(road_points)
 
-        # translated points (originally, without translation)
-        self.trans_left_pts = self.left_boundary_points.copy()
-        self.trans_right_pts = self.right_boundary_points.copy()
-        self.trans_mid_pts = self.track_points.copy()
+            # translated points (originally, without translation)
+            self.trans_left_pts = self.left_boundary_points.copy()
+            self.trans_right_pts = self.right_boundary_points.copy()
+            self.trans_mid_pts = self.track_points.copy()
+
+            # compute self.curvature
+            list_track_pts = self.track_points.tolist()
+            a, b, c = list_track_pts[-50:], list_track_pts, list_track_pts[:50]
+            curvature = compute_curvature(a + b + c)
+            curvature = curvature[len(a):len(a)+self.track_length]
+            max_curvature = max(max(curvature), -min(curvature))
+            self.curvature_normalized = np.array(curvature) / max_curvature
 
     # this func. is a place-holder; no updates are needed
     def update(self):

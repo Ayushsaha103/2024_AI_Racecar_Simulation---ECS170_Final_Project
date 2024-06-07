@@ -1,82 +1,80 @@
+
 import numpy as np
 import pygame
 import generator
+import random
 from Constants import *
 from math_helpers import distance
 from shapely.geometry import Point
 from shapely.geometry.polygon import LineString
 from shapely.geometry import Polygon
 
-
 class Road():
-    def __init__(self, track_length=1000, track_width=60, num_curves=25, max_curvature=0.1, track_number=42, num_pts=300):
+    def __init__(self, track_length=1000, track_width=60, num_curves=25, max_curvature=0.07, track_number=42, num_pts=750):
         self.track_length = track_length
         self.track_width = track_width
         self.num_curves = num_curves
         self.max_curvature = max_curvature
         self.track_number = track_number
         self.num_pts = num_pts
-        self.finish_line_coords = None
 
         self.reset()
 
     def reset(self):
         self.done = False
-
+        self.track_number = random.randint(1,50)
         # generate the original track points
         self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
         self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
 
         # generate the non-translated track points
-        self.orig_track_pts = [(x, y) for x, y in zip(self.x_fine, self.y_fine)]
-        self.orig_left_pts = [(x,y) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
-        self.orig_right_pts = [(x,y) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
-        self.generate_translated_track_pts(0,0)
-
-        # zip the original coordinates into a list of points
-        self.left_boundary_points = list(zip(self.left_boundary_x, self.left_boundary_y))
-        self.right_boundary_points = list(zip(self.right_boundary_x, self.right_boundary_y))
+        self.track_points = np.array([(x, y) for x, y in zip(self.x_fine, self.y_fine)])
+        self.left_boundary_points = np.array([(x, y) for x, y in zip(self.left_boundary_x, self.left_boundary_y)])
+        self.right_boundary_points = np.array([(x, y) for x, y in zip(self.right_boundary_x, self.right_boundary_y)])
 
         # Create separate linestrings for the left and right boundaries
         # This is used for collision detection
         self.left_linestring = LineString(self.left_boundary_points)
         self.right_linestring = LineString(self.right_boundary_points)
 
-        
-        # Save finish line coordinates
-        self.finish_line_coords = (self.left_boundary_points[0], self.right_boundary_points[0])
-        
-    def generate_translated_track_pts(self, player_x_trans, player_y_trans):
-        # translate the original road points by player_x_trans, player_y_trans
-        self.translated_track_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.x_fine, self.y_fine)]
-        self.translated_left_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.left_boundary_x, self.left_boundary_y)]
-        self.translated_right_pts = [(x + player_x_trans, y + player_y_trans) for x, y in zip(self.right_boundary_x, self.right_boundary_y)]
+        # save the original non-translated track points into road points
+        road_points = self.left_boundary_points + self.right_boundary_points[::-1]
+        self.rd_pts_polygon = Polygon(road_points)
 
-    def update(self, player_x_trans, player_y_trans):
-        # generate the transformed track points
-        self.generate_translated_track_pts(player_x_trans, player_y_trans)
-    
+        # translated points (originally, without translation)
+        self.trans_left_pts = self.left_boundary_points.copy()
+        self.trans_right_pts = self.right_boundary_points.copy()
+        self.trans_mid_pts = self.track_points.copy()
+
+    # this func. is a place-holder; no updates are needed
+    def update(self):
+        pass
+
     def draw(self, screen, player_x_trans, player_y_trans):
-        # Draw the track boundaries
-        pygame.draw.lines(screen, RED, False, self.translated_left_pts, 2)
-        pygame.draw.lines(screen, RED, False, self.translated_right_pts, 2)
-        pygame.draw.lines(screen, BLUE, False, self.translated_track_pts, 2)
+        # translate the track points
+        translation = (player_x_trans, player_y_trans)
+        self.trans_left_pts = self.left_boundary_points+translation
+        self.trans_right_pts = self.right_boundary_points+translation
+        self.trans_mid_pts = self.track_points+translation
 
-        # draw road points
-        for i in range(len(self.translated_left_pts)):
-            l,m,r = self.translated_left_pts[i], self.translated_track_pts[i], self.translated_right_pts[i]
-            pygame.draw.circle(screen, RED, l, 4)
-            pygame.draw.circle(screen, BLUE, m, 4)
-            pygame.draw.circle(screen, RED, r, 4)
+        # draw the translated points
+        pygame.draw.lines(screen, RED, False, self.trans_left_pts, 2)
+        pygame.draw.lines(screen, RED, False, self.trans_right_pts, 2)
+        pygame.draw.lines(screen, BLUE, False, self.trans_mid_pts, 2)
         
-        # Draw starting / finish line
-        # pygame.draw.line(screen, GREEN, self.left_boundary_points[0]+player_x_trans, self.right_boundary_points[0]+player_y_trans, 5)
-        self.finish_line_coords = (self.left_boundary_points[0], self.right_boundary_points[0])
+        # draw last road segment
+        pygame.draw.line(screen, RED, self.trans_left_pts[-1], self.trans_left_pts[0], 2)
+        pygame.draw.line(screen, RED, self.trans_right_pts[-1], self.trans_right_pts[0], 2)
+        pygame.draw.line(screen, RED, self.trans_mid_pts[-1], self.trans_mid_pts[0], 2)
 
-    def update_and_draw(self, screen, player_x_trans, player_y_trans):
-        self.update(player_x_trans, player_y_trans)
-        self.draw(screen, player_x_trans, player_y_trans)
-
+        # # draw road points
+        # for i in range(len(trans_mid_pts)):
+        #     l = trans_left_pts[i]
+        #     m = trans_right_pts[i]
+        #     r = trans_mid_pts[i]
+        #     pygame.draw.circle(screen, RED, l, 4)
+        #     pygame.draw.circle(screen, BLUE, m, 4)
+        #     pygame.draw.circle(screen, RED, r, 4)
     def get_initial_position(self):
         # Return the initial position of the car
         return [self.x_fine[0], self.y_fine[0]]
@@ -85,13 +83,12 @@ class Road():
         # Return the initial yaw of the car
         return np.arctan2(self.y_fine[1] - self.y_fine[0], self.x_fine[1] - self.x_fine[0])
 
-    def get_has_collided(self, car):
+    def check_collision(self, car):
         # Check if the car intersects with either linestring
-        return self.left_linestring.intersects(car) or self.right_linestring.intersects(
-            car
-        )
-    def get_intersect_finish_line(self, car):
-        # Check if the car intersects with the finish line
-        car_box = Polygon(car.get_bounding_box())
-        finish_line = LineString(self.finish_line_coords)
-        return finish_line.intersects(car_box)
+        return self.left_linestring.intersects(car.bounding_box) or \
+            self.right_linestring.intersects(car.bounding_box)
+
+        # point = Point(car.x, car.y)
+        # return not self.rd_pts_polygon.contains(point)
+
+

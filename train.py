@@ -12,7 +12,7 @@ import logging
 
 import Constants
 
-from stable_baselines3 import A2C, PPO, DQN
+from stable_baselines3 import A2C #PPO, DQN also can be used 
 
 from env import CarEnv
 env = CarEnv()
@@ -32,7 +32,7 @@ try:
     # In addition to PPO, A2C and DQN are also viable options.
 
     # initialize model
-    model = PPO('MlpPolicy',
+    model = A2C('MlpPolicy',
                env,
                learning_rate   = learning_rate,
                ent_coef        = ent_coef, 
@@ -43,7 +43,7 @@ try:
                tensorboard_log = tensorboard_log_path)
     
     # # load existing model
-    # model = A2C.load("./models/AIcar_rev1.zip", env=env)
+    model = A2C.load(Constants.Model_Save_Path, env=env)
     
     # train model
     model.learn(total_timesteps = total_timesteps, 
@@ -54,7 +54,7 @@ try:
                 progress_bar=False)
     
     # save model
-    Model_Save_Path = Constants.Model_Save_Path
+    Model_Save_Path = Constants.get_updated_Model_Save_Path(Constants.modelname)
     model.save(Model_Save_Path)
     
     

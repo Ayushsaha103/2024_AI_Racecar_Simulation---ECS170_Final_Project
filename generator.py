@@ -64,7 +64,7 @@ def generate_racetrack(length, width, num_curves, max_curvature, track_number=42
     right_boundary_x = x_fine - width / 2 * dy
     right_boundary_y = y_fine + width / 2 * dx
 
-    return x_fine, y_fine, left_boundary_x, left_boundary_y, right_boundary_x, right_boundary_y
+    return x_fine[:-1], y_fine[:-1], left_boundary_x[:-1], left_boundary_y[:-1], right_boundary_x[:-1], right_boundary_y[:-1]
 
 
 # # Function to generate a racetrack

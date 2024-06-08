@@ -1,6 +1,4 @@
 import os
-from math import sin, cos, pi, sqrt
-from random import randrange
 
 import pygame
 from pygame.locals import *

@@ -55,11 +55,8 @@ def get_updated_Model_Save_Path(modelname):
 
 # Indicates the model path which will save after the training, 
 
-tensorboard_log = "./DroneLog/"
+tensorboard_log = "./CarLog/"
 tensorboard_sub_folder = 'new_training' + str(total_timesteps/1000) + "k"
-
-# Display and asset Settings & Function
-BACKGROUND = "assets/sky.png"
 
 # Takes multiple image and provide animation in the game
 CAR_WIDTH = 80/10
@@ -68,7 +65,7 @@ def spriter(Type):
     if Type == "Car":
         image_width = CAR_WIDTH
         image_height = CAR_HEIGHT
-        image_path = "./assets/Drone/"
+        image_path = "./assets/"
 
     player = []
 

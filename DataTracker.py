@@ -21,3 +21,6 @@ class DataTracker(BaseCallback):
 
     def get_data(self):
         return self.data
+    
+    def save_data(self, filename, index=False):
+        self.data.to_csv(filename, index=index)

@@ -16,7 +16,10 @@ class DataTracker(BaseCallback):
     def _on_rollout_end(self) -> bool:
         self.episode_rewards.append(np.mean(self.current_rewards))
         self.current_rewards = []
-        self.data = self.data.append({'episode': len(self.episode_rewards), 'avg_reward': self.episode_rewards[-1]}, ignore_index=True)
+
+        new_row = pd.DataFrame([{'episode': len(self.episode_rewards), 'avg_reward': self.episode_rewards[-1]}])
+        self.data = pd.concat([self.data, new_row], ignore_index=True)
+        
         return True
 
     def get_data(self):

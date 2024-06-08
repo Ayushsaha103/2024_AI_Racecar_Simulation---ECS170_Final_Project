@@ -38,7 +38,7 @@ try:
                tensorboard_log = tensorboard_log_path)
     
     # # load existing model
-    # model = A2C.load("./models/AIcar_rev1.zip", env=env)
+    model = A2C.load(Constants.Model_Save_Path, env=env)
     
     # train model
     model.learn(total_timesteps = total_timesteps, 
@@ -47,10 +47,9 @@ try:
                 tb_log_name     = tensorboard_sub_folder, 
                 reset_num_timesteps=True, 
                 progress_bar=False)
-    print("learned")
     
     # save model
-    Model_Save_Path = Constants.Model_Save_Path
+    Model_Save_Path = Constants.get_updated_Model_Save_Path(Constants.modelname)
     model.save(Model_Save_Path)
     
     

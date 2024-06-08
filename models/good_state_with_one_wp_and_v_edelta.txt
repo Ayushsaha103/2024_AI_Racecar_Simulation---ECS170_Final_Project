@@ -1,0 +1,25 @@
+    def reward(self):
+        reward = 0
+        car_pos = (self.car.x, self.car.y)
+        n = len(self.rd.track_points)
+        wpcoor = self.rd.track_points[(self.wp.first_target_pt)%n]
+        reward += (1/600)*self.wp.rd_dist_traversed
+        reward += -abs(self.obs.ephi) - (1/20)*self.obs.ey
+        # reward += 30/(distance(car_pos, wpcoor) + 0.01)
+        
+        # check if waypoints updated
+        # crossed_wp_coor = self.rd.track_points[self.wp.closest_pt-1]
+        if self.wp.just_updated:    # and distance(car_pos, crossed_wp_coor) < 6:
+            # print("wp update")
+            reward += 9.0
+
+
+
+
+
+        self.data = np.array(
+            # [self.car.delta, self.car.v, self.car.wz, self.s, self.ey, self.ephi]
+            # [wpa, wpd, edelta, self.ey, self.ephi]
+            # self.wpas + self.wpds + [edelta, self.ey, self.ephi]
+            self.wpas + self.wpds + [self.car.v, edelta]
+            ).astype(np.float16)

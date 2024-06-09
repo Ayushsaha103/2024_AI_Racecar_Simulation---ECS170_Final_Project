@@ -1,8 +1,3 @@
-# Author: RsGoksel
-# pip install stable-baselines3 
-# pip install 'shimmy>=0.2.1'   
-
-
 print("Libraries Loading, please wait...")
 
 import sys
@@ -31,16 +26,16 @@ total_timesteps = Constants.total_timesteps
 try:
     # In addition to PPO, A2C and DQN are also viable options.
 
-    # initialize model
-    model = A2C('MlpPolicy',
-               env,
-               learning_rate   = learning_rate,
-               ent_coef        = ent_coef, 
-               gamma           = gamma, 
-               gae_lambda      = gae_lambda,
-               max_grad_norm   = max_grad_norm,
-               verbose         = 0, 
-               tensorboard_log = tensorboard_log_path)
+    # # initialize model
+    # model = A2C('MlpPolicy',
+    #            env,
+    #            learning_rate   = learning_rate,
+    #            ent_coef        = ent_coef, 
+    #            gamma           = gamma, 
+    #            gae_lambda      = gae_lambda,
+    #            max_grad_norm   = max_grad_norm,
+    #            verbose         = 0, 
+    #            tensorboard_log = tensorboard_log_path)
     
     # # load existing model
     model = A2C.load(Constants.Model_Save_Path, env=env)

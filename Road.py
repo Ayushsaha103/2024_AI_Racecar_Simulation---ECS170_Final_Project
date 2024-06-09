@@ -10,7 +10,7 @@ from shapely.geometry.polygon import LineString
 from shapely.geometry import Polygon
 
 class Road():
-    def __init__(self, track_length=1000, track_width=60, num_curves=38, max_curvature=0.08, track_number=42, num_pts=450):
+    def __init__(self, track_length=1000, track_width=60, num_curves=30, max_curvature=0.07, track_number=42, num_pts=450):
         self.track_length = track_length
         self.track_width = track_width
         self.num_curves = num_curves
@@ -24,11 +24,12 @@ class Road():
         self.done = False
         # every 10 games, regenerate track
         try:
-            dummy_var = self.track          # generate new track if track does not exist
-            if random.randint(0,10) == 0: assert(False)       # occasionally generate new track
+            dummy_var = self.track
+            # if random.randint(0,10) == 0: assert(False)
         except:
             # generate the original track points
             self.track_number = random.randint(1,50)
+            print("Track number generated: " + str(self.track_number))
             self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number, self.num_pts)
             self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
 

@@ -1,6 +1,6 @@
 import pygame
-from env import droneEnv
-env = droneEnv()
+from env import CarEnv
+env = CarEnv()
 
 
 print("\n\n")

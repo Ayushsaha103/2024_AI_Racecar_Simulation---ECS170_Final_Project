@@ -21,6 +21,7 @@ class Waypoints():
         self.TARGET_PT_DISPLACEMENT = 1
         self.first_target_pt = self.TARGET_PT_DISPLACEMENT
         self.just_updated = False
+        self.num_updates_in_game = 0
     # update the waypoints
     # return the number of progressive indices moved forward (IF UPDATE OCCURS)
     def update(self):
@@ -54,6 +55,7 @@ class Waypoints():
             self.closest_pt = closest_idx
             self.first_target_pt = (self.closest_pt + self.TARGET_PT_DISPLACEMENT)%n
             self.just_updated = True
+            self.num_updates_in_game += 1
             
         return stepwise_dist_traversed
         # return idxs_updated     # num. of indices the waypoints obj has moved by

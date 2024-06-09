@@ -1,6 +1,4 @@
 import os
-from math import sin, cos, pi, sqrt
-from random import randrange
 
 import pygame
 from pygame.locals import *
@@ -17,10 +15,9 @@ from Waypoints import *
 from math_helpers import *
 from obs_data import *
 from timer import *
-from rewards_data import *
 from Training_dojo import *
 import math
-
+from Data_logger import *
 
 os.system('cls' if os.name == 'nt' else 'clear') # Cleaning library loading information texts
 print("Fetching Libraries.. Please Wait..")
@@ -33,6 +30,7 @@ print("Fetching Libraries.. Please Wait..")
 
 class CarEnv(gym.Env):
     def __init__(self):
+        print('0')
         super(CarEnv, self).__init__()
         pygame.init()
         
@@ -51,16 +49,20 @@ class CarEnv(gym.Env):
         # self.reward = 0
 
         # initialize agent, road, waypoints, car, obs_data, and rewards_data
+        print('1')
         self.car       = Car()
         self.car_image = spriter("Car")
-
+        print('2')
         self.rd = Road()           # road object
         self.wp = Waypoints(NUM_WAYPOINTS, self.rd, self.car)        # waypoints (target points) object
         self.obs = Obs_data(self.rd, self.wp, self.car, OBS_SIZE)
         self.tim = Timer()
+        print('3')
         # self.rw = Rewards_data(self.obs, self.car, self.tim, NUM_REWARDS)
         self.dojo = Training_dojo(self.rd, self.wp, self.car, self.obs, self.tim)
-        
+        self.dl = Data_Logger(self)
+        print('4')
+
         # GYM CONFIGURE
         self.action_space      = gym.spaces.Discrete(5)
         self.obs_size = OBS_SIZE
@@ -68,6 +70,7 @@ class CarEnv(gym.Env):
         self.info = {}
         Constants.report(self)
         
+        self.num_games = -1
         self.reset()
 
     # reset the game
@@ -79,6 +82,7 @@ class CarEnv(gym.Env):
         self.tim.reset()
         # self.rw.reset()
         self.dojo.reset()
+        self.dl.reset()
 
         # reset car position
         inital_pos = self.rd.get_initial_position()
@@ -89,7 +93,10 @@ class CarEnv(gym.Env):
         self.throttle, self.delta = 0,0
         self.action = 0
         self.reward = 0
-
+        self.num_games += 1
+        if self.num_games == total_timesteps-2:
+            self.dl.finish()
+            
         return self.get_obs()
 
     # return the state of the game (so Agent knows its surroundings)
@@ -138,6 +145,7 @@ class CarEnv(gym.Env):
         # self.reward = self.rw.get_reward()
         # return self.get_obs(), self.rw.get_reward(), False, self.info
         self.reward = self.dojo.reward()
+        self.dl.log_incremental_data()
         return self.get_obs(), self.reward, False, self.info
     
     # render text & value to the pygame screen

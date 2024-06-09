@@ -1,7 +1,7 @@
 
 import math
 import numpy as np
-
+import pandas as pd
 
 
 ############################################################################################################
@@ -125,3 +125,15 @@ def compute_curvature(track_pts):
     curvature = np.abs(dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**(3/2)
     
     return curvature
+
+def save_data(data, column_names, filename):
+    df = pd.DataFrame(data, columns=column_names)
+    df.to_csv(filename, index=False)
+    print("Data saved in: " + filename)
+    # # Load the DataFrame from the CSV file
+    # df_loaded = pd.read_csv(filename)
+    # return df_loaded
+
+
+
+

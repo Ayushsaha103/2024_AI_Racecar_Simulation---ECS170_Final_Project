@@ -14,7 +14,7 @@ class DataTracker(BaseCallback):
                 "avg_ephi",
                 "avg_v",
                 "episode_time",
-                "progress",
+                "distance_traveled",
             ]
         )
         self.episode_rewards = []
@@ -22,7 +22,7 @@ class DataTracker(BaseCallback):
         self.current_eys = []
         self.current_ephis = []
         self.current_vs = []
-        self.current_s = 0
+        self.current_dist_traveled = 0
 
     def _on_step(self) -> bool:
         self.current_rewards.append(self.training_env.get_attr("reward")[0])
@@ -30,7 +30,8 @@ class DataTracker(BaseCallback):
         obs = self.training_env.get_attr("obs")[0]
         self.current_ephis.append(obs.ephi)
         self.current_eys.append(obs.ey)
-        self.current_s += obs.s
+        if obs.s != 0:
+            self.current_dist_traveled = obs.s
 
         car = self.training_env.get_attr("car")[0]
         self.current_vs.append(car.v)
@@ -51,8 +52,8 @@ class DataTracker(BaseCallback):
             tim = self.training_env.get_attr("tim")[0]
             game_time = tim.get_time_elapsed("game")
 
-            progress = self.current_s
-            self.current_s = 0
+            dist_traveled = self.current_dist_traveled
+            self.current_dist_traveled = 0
 
             new_row = pd.DataFrame(
                 [
@@ -63,7 +64,7 @@ class DataTracker(BaseCallback):
                         "avg_ey": avg_ey,
                         "avg_v": avg_v,
                         "episode_time": game_time,
-                        "progress": progress,
+                        "distance_traveled": dist_traveled,
                     }
                 ]
             )

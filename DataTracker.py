@@ -6,12 +6,23 @@ import numpy as np
 class DataTracker(BaseCallback):
     def __init__(self, verbose=0):
         super(DataTracker, self).__init__(verbose)
-        self.data = pd.DataFrame(columns=["episode", "avg_reward", "avg_ey", "avg_ephi", "avg_v", "episode_time", "progress"])
+        self.data = pd.DataFrame(
+            columns=[
+                "episode",
+                "avg_reward",
+                "avg_ey",
+                "avg_ephi",
+                "avg_v",
+                "episode_time",
+                "progress",
+            ]
+        )
         self.episode_rewards = []
         self.current_rewards = []
         self.current_eys = []
         self.current_ephis = []
         self.current_vs = []
+        self.current_s = 0
 
     def _on_step(self) -> bool:
         self.current_rewards.append(self.training_env.get_attr("reward")[0])
@@ -19,6 +30,7 @@ class DataTracker(BaseCallback):
         obs = self.training_env.get_attr("obs")[0]
         self.current_ephis.append(obs.ephi)
         self.current_eys.append(obs.ey)
+        self.current_s += obs.s
 
         car = self.training_env.get_attr("car")[0]
         self.current_vs.append(car.v)
@@ -39,7 +51,8 @@ class DataTracker(BaseCallback):
             tim = self.training_env.get_attr("tim")[0]
             game_time = tim.get_time_elapsed("game")
 
-            progress = obs.s
+            progress = self.current_s
+            self.current_s = 0
 
             new_row = pd.DataFrame(
                 [
@@ -50,7 +63,7 @@ class DataTracker(BaseCallback):
                         "avg_ey": avg_ey,
                         "avg_v": avg_v,
                         "episode_time": game_time,
-                        "progress": progress
+                        "progress": progress,
                     }
                 ]
             )

@@ -4,8 +4,8 @@ import pygame
 from pygame.locals import *
 
 import numpy as np
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 
 import Constants
 from Constants import *
@@ -30,7 +30,7 @@ print("Fetching Libraries.. Please Wait..")
 ################################################################################################
 
 class CarEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, limit=0):
         super(CarEnv, self).__init__()
         pygame.init()
         
@@ -65,11 +65,14 @@ class CarEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.obs_size,), dtype=np.float16)
         self.info = {}
         Constants.report(self)
+
+        self.limit = limit
+        self.counter = 0
         
         self.reset()
 
     # reset the game
-    def reset(self):
+    def reset(self, seed=None):
         # reset road, waypoints, and obs_data objects
         self.rd.reset()
         self.wp.reset()
@@ -88,7 +91,9 @@ class CarEnv(gym.Env):
         self.action = 0
         self.reward = 0
 
-        return self.get_obs()
+        self.counter = 0
+
+        return self.get_obs(), self.info
 
     # return the state of the game (so Agent knows its surroundings)
     def get_obs(self) -> np.ndarray:
@@ -96,6 +101,7 @@ class CarEnv(gym.Env):
 
     # single timestep update of game
     def step(self, action):
+        self.counter += 1
         
         self.render()
 
@@ -130,13 +136,18 @@ class CarEnv(gym.Env):
             if self.rd.check_collision(self.car) or self.dojo.terminate():
                 # print("COLLISION!")
                 done = True
-                return self.get_obs(), self.dojo.collision_reward(), done, self.info
+                return self.get_obs(), self.dojo.collision_reward(), done, False, self.info
         
+        truncated = False
+
+        if self.limit != 0 and self.counter >= self.limit:
+            truncated = True
+
         # update reward value
         # self.reward = self.rw.get_reward()
         # return self.get_obs(), self.rw.get_reward(), False, self.info
         self.reward = self.dojo.reward()
-        return self.get_obs(), self.reward, False, self.info
+        return self.get_obs(), self.reward, False, truncated, self.info
     
     # render text & value to the pygame screen
     def render_text_and_value(self, label, val, bottom_right_coors):

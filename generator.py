@@ -14,7 +14,7 @@ def calculate_curvature(x, y):
     return curvature
 
 # Function to generate a racetrack
-def generate_racetrack(length, width, num_curves, max_curvature, track_number=42, num_pts=400):
+def generate_racetrack(length, width, num_curves, max_curvature, track_number=42):
     # Set random seed for reproducibility (commented out for random tracks each run)
     np.random.seed(track_number)
 
@@ -37,7 +37,7 @@ def generate_racetrack(length, width, num_curves, max_curvature, track_number=42
     max_curvature_reached = False  # Flag to check if curvature is within the limit
     while not max_curvature_reached:
         # Create a fine set of points along the spline
-        u_fine = np.linspace(0, 1, num_pts)
+        u_fine = np.linspace(0, 1, 1000)
         x_fine, y_fine = splev(u_fine, tck)
 
         # Calculate the curvature of the fine points
@@ -64,63 +64,7 @@ def generate_racetrack(length, width, num_curves, max_curvature, track_number=42
     right_boundary_x = x_fine - width / 2 * dy
     right_boundary_y = y_fine + width / 2 * dx
 
-    return x_fine[:-1], y_fine[:-1], left_boundary_x[:-1], left_boundary_y[:-1], right_boundary_x[:-1], right_boundary_y[:-1]
-
-
-# # Function to generate a racetrack
-# def generate_racetrack(length, width, num_curves, max_curvature, track_number=42):
-#     # Set random seed for reproducibility (commented out for random tracks each run)
-#     np.random.seed(track_number)
-    
-#     # Create angles for control points evenly spaced around a circle
-#     angles = np.linspace(0, 2 * np.pi, num_curves, endpoint=False)
-#     # Generate random radii for control points within the given length constraints
-#     radii = np.random.uniform(low=0.5*length, high=length, size=num_curves)
-    
-#     # Calculate x and y coordinates of control points
-#     x = radii * np.cos(angles)
-#     y = radii * np.sin(angles)
-    
-#     # Combine x and y into a single array of control points
-#     control_points = np.column_stack((x, y))
-#     # Add the first point again to close the loop
-#     control_points = np.vstack([control_points, control_points[0]])
-    
-#     # Create a B-spline representation of the control points
-#     tck, _ = splprep(control_points.T, s=0, per=True)
-    
-#     max_curvature_reached = False  # Flag to check if curvature is within the limit
-#     while not max_curvature_reached:
-#         # Create a fine set of points along the spline
-#         u_fine = np.linspace(0, 1, 1000)
-#         x_fine, y_fine = splev(u_fine, tck)
-        
-#         # Calculate the curvature of the fine points
-#         curvature = calculate_curvature(x_fine, y_fine)
-#         if np.max(curvature) > max_curvature:
-#             # If curvature exceeds the max limit, regenerate the control points
-#             radii = np.random.uniform(low=0.5*length, high=length, size=num_curves)
-#             x = radii * np.cos(angles)
-#             y = radii * np.sin(angles)
-#             control_points = np.column_stack((x, y))
-#             control_points = np.vstack([control_points, control_points[0]])
-#             tck, u = splprep(control_points.T, s=0, per=True)
-#         else:
-#             max_curvature_reached = True  # Exit the loop if curvature is acceptable
-    
-#     # Compute the normalized direction vectors for the center line
-#     dx, dy = np.gradient(x_fine), np.gradient(y_fine)
-#     norms = np.hypot(dx, dy)
-#     dx, dy = dx / norms, dy / norms
-    
-#     # Calculate the left and right boundaries of the track
-#     left_boundary_x = x_fine + width / 2 * dy
-#     left_boundary_y = y_fine - width / 2 * dx
-#     right_boundary_x = x_fine - width / 2 * dy
-#     right_boundary_y = y_fine + width / 2 * dx
-
-#     return x_fine, y_fine, left_boundary_x, left_boundary_y, right_boundary_x, right_boundary_y
-    
+    return x_fine, y_fine, left_boundary_x, left_boundary_y, right_boundary_x, right_boundary_y
 
 def plot_racetrack(x_center, y_center, x_left, y_left, x_right, y_right):
     # Plot the center line
@@ -142,6 +86,6 @@ track_width = 10
 number_of_curves = 25
 max_curvature = 0.2
 
-# # Call the function to generate and display the racetrack
-# track = generate_racetrack(track_length, track_width, number_of_curves, max_curvature)
+# Call the function to generate and display the racetrack
+track = generate_racetrack(track_length, track_width, number_of_curves, max_curvature)
 # plot_racetrack(*track)

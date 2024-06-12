@@ -15,7 +15,6 @@ from Waypoints import *
 from math_helpers import *
 from obs_data import *
 from timer import *
-from rewards_data import *
 from Training_dojo import *
 import math
 

@@ -11,7 +11,7 @@ import random
 # Constants
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-MAX_VELOCITY = 20
+MAX_VELOCITY = 5
 MIN_VELOCITY = 0
 FRICTION = 0.0
 
@@ -400,29 +400,84 @@ class RacetrackEnv(gymnasium.Env):
         current_position = np.array([self.car_x, self.car_y])
         distances = np.hypot(self.x_fine - current_position[0], self.y_fine - current_position[1])
         nearest_waypoint_index = np.argmin(distances)
-        waypoint_distance = np.linalg.norm(current_position - np.array([self.x_fine[nearest_waypoint_index], self.y_fine[nearest_waypoint_index]]))
-
-        if waypoint_distance < 5:
-            self.previous_waypoint_index = nearest_waypoint_index
+        
+        # Ensure the car is moving forward by checking waypoint index progression
+        if nearest_waypoint_index > self.previous_waypoint_index:
             self.total_distance += np.linalg.norm(
                 np.array([self.x_fine[nearest_waypoint_index], self.y_fine[nearest_waypoint_index]]) - 
-                np.array([self.x_fine[nearest_waypoint_index - 1], self.y_fine[nearest_waypoint_index - 1]])
+                np.array([self.x_fine[self.previous_waypoint_index], self.y_fine[self.previous_waypoint_index]])
             )
-    
-    def calculate_reward(self):
-        """Calculate reward based on the distance traveled, speed, and staying on the track."""
-        reward = 0
-        # Reward for low velocity / no movement
-        if self.car_velocity < 0.5:
-            reward -= 100
+            self.previous_waypoint_index = nearest_waypoint_index
 
-        # Reward for moving forward
-        reward += self.total_distance * 0.01
-        # Speed reward (higher speed gets a higher reward)
-        reward += self.car_velocity * 0.1
-        # Penalty for being off track
+    
+    # def calculate_reward(self):
+    #     """Calculate reward based on the distance traveled, speed, and staying on the track."""
+    #     reward = 0
+    #     # Reward for low velocity / no movement
+    #     if self.car_velocity < 0.1:
+    #         reward -= 4
+
+    #     # Reward for moving forward
+    #     reward += self.total_distance * 0.1
+    #     # Speed reward (higher speed gets a higher reward)
+    #     reward += self.car_velocity * 0.05
+
+    #     # Reward for staying near the center of the track
+    #     distance_from_center = self.track_width / 2 - min(self.distance_to_left_boundary, self.distance_to_right_boundary)
+    #     reward += distance_from_center * 0.1
+
+    #     # Penalty for being off track
+    #     if not self.check_on_track():
+    #         reward -= 7  # Large penalty for going off the track
+
+    #     return reward
+
+    def calculate_reward(self):
+        # Penalize being off-track
         if not self.check_on_track():
-            reward -= 7  # Large penalty for going off the track
+            return -100  # Large negative reward for going off track
+
+        # Progress reward
+        progress_reward = self.total_distance - self.previous_waypoint_index
+
+        # make sure progress reward is positive
+        if progress_reward < 0:
+            progress_reward = 0
+
+        # Centerline reward
+        distance_from_center = abs(self.track_width / 2 - min(self.distance_to_left_boundary, self.distance_to_right_boundary))
+        centerline_penalty = distance_from_center / (self.track_width / 2)  # Normalize to 0-1
+
+        # Speed reward
+        speed_reward = self.car_velocity / MAX_VELOCITY  # Normalize to 0-1
+
+        # Smoothness penalty (for excessive steering and velocity changes)
+        steering_penalty = abs(self.current_action[0] - self.last_action[0])
+        acceleration_penalty = abs(self.current_action[1] - self.last_action[1])
+        smoothness_penalty = (steering_penalty + acceleration_penalty) / 2
+
+        # Lap completion reward
+        lap_completion_reward = 0
+        if self.check_crossed_start_line() and self.award_lap_time():
+            lap_completion_reward = 1000 / max(self.lap_time, 1e-4)  # Large reward for quick lap completion
+
+        no_movement_penalty = -10 if abs(self.car_velocity) < 0.1 else 0  # Apply penalty if the car's velocity is very low
+
+
+        # # Print rewards and penalties
+        # print(f"Progress reward: {progress_reward:.2f}")
+        # print(f"Centerline penalty: {centerline_penalty:.2f}")
+        # print(f"Speed reward: {speed_reward:.2f}")
+        # print(f"Smoothness penalty: {smoothness_penalty:.2f}")
+        # print(f"Lap completion reward: {lap_completion_reward:.2f}")
+
+        # Aggregate reward
+        reward = (progress_reward * 0.5 +
+                speed_reward * 0.3 -
+                centerline_penalty * 0.2 -
+                smoothness_penalty * 0.1 +
+                lap_completion_reward +
+                no_movement_penalty)
 
         return reward
 

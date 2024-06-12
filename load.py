@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from stable_baselines3 import PPO, A2C
+from stable_baselines3 import PPO, A2C, SAC
 from stable_baselines3.common.env_util import make_vec_env
 from racetractEnv import RacetrackEnv  # Ensure your environment file is named racetrack_env.py
 from stable_baselines3.common.env_checker import check_env
@@ -25,6 +25,8 @@ def load_model(algo, num = -1):
         model = PPO.load(f"models/{algo.lower()}_racetrack_{num}.zip", env=env)
     elif algo == 'A2C':
         model = A2C.load(f"models/{algo.lower()}_racetrack_{num}.zip", env=env)
+    elif algo == 'SAC':
+        model = SAC.load(f"models/{algo.lower()}_racetrack_{num}.zip", env=env)
     else:
         raise ValueError("Invalid agent policy. Choose from 'A2C', 'PPO', or 'SAC'.")
     

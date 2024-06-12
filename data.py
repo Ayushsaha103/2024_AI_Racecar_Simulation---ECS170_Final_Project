@@ -72,4 +72,4 @@ def plot_data(algorithm_type, number=-1):
 
 
 # Example usage:
-plot_data('PPO', 17)
+plot_data('PPO', number=46)

@@ -22,7 +22,7 @@ angle_min, angle_max = 0, 360  # For car_angle
 distance_min, distance_max = 0, 50  # For distance to boundaries
 lidar_min, lidar_max = 0, 600  # For LiDAR readings
 time_min, time_max = 0, 100  # For lap time
-checkpoint_min, checkpoint_max = 0, 2000  # For distance to checkpoint
+angular_velocity_min, angular_velocity_max = -360, 360  # For angular velocity
 
 # Number of waypoints (fixed)
 num_waypoints = 10
@@ -34,18 +34,18 @@ num_lidar_readings = 8
 observation_space = spaces.Box(
     low=np.array([
         velocity_min,  # car_velocity
-        # angle_min,  # car_angle
-        distance_min,  # distance_to_left_boundary
-        distance_min,  # distance_to_right_boundary
+        angular_velocity_min,  # angular_velocity
+        distance_min,  # distance_traveled
+        distance_min,  # distance_from_center
         time_min,  # current_lap_time
         -np.inf,  # curvature
         *([lidar_min] * num_lidar_readings)  # LiDAR readings
     ]),
     high=np.array([
         velocity_max,  # car_velocity
-        # angle_max,  # car_angle
-        distance_max,  # distance_to_left_boundary
-        distance_max,  # distance_to_right_boundary
+        angular_velocity_max,  # angular_velocity
+        distance_max,  # distance_traveled
+        distance_max,  # distance_from_center
         time_max,  # current_lap_time
         np.inf,  # curvature
         *([lidar_min] * num_lidar_readings)  # LiDAR readings
@@ -97,6 +97,7 @@ class RacetrackEnv(gymnasium.Env):
         self.car_y = self.y_fine[0]
         self.last_action = np.array([0, 0], dtype=np.float32)  # Initialize last_action
         self.current_action = np.array([0, 0], dtype=np.float32)  # Initialize current_action
+        self.distance_to_left_boundary, self.distance_to_right_boundary = self.calculate_distances_to_boundaries()
         
         # Start facing the first waypoint
         first_waypoint = np.array([self.x_fine[1], self.y_fine[1]])
@@ -113,6 +114,9 @@ class RacetrackEnv(gymnasium.Env):
         self.lap_count = 0
         self.checkpoint_index = 0
         self.terminated = False
+
+        self.prev_car_angle = self.car_angle
+        self.angular_velocity = 0
 
         # Initialize the spatial grid for fast boundary lookup
         self.init_spatial_grid()
@@ -158,6 +162,10 @@ class RacetrackEnv(gymnasium.Env):
         self.car_velocity = np.clip(self.car_velocity + velocity, MIN_VELOCITY, MAX_VELOCITY)
         self.car_angle = (self.car_angle + steering * 20) % 360
 
+
+        self.angular_velocity = (self.car_angle - self.prev_car_angle) / self.get_game_time() if self.get_game_time() > 0 else 0
+        self.prev_car_angle = self.car_angle
+
         # Apply friction to the car's velocity
         if self.car_velocity > 0:
             self.car_velocity = max(0, self.car_velocity - FRICTION)
@@ -169,7 +177,6 @@ class RacetrackEnv(gymnasium.Env):
         self.car_y += self.car_velocity * np.sin(np.radians(self.car_angle))
 
         current_position = np.array([self.car_x, self.car_y])
-        distance = np.linalg.norm(current_position - self.prev_position)
         self.update_absolute_distance()
         self.prev_position = [self.car_x, self.car_y]  # Update previous position for next step
 
@@ -177,7 +184,7 @@ class RacetrackEnv(gymnasium.Env):
         self.reward = self.calculate_reward()
         terminated = self.lap_count == 3  # End the episode after 3 laps
         truncated = not self.check_on_track()
-        done = terminated or truncated
+        # done = terminated or truncated
         info = {}
 
         # Check if the car has completed a lap
@@ -255,8 +262,8 @@ class RacetrackEnv(gymnasium.Env):
                 ("Current lap time", self.lap_time),
                 ("Distance traveled", self.distance_traveled()),
                 ("Left-most lidar", lidar_distances[0]),
-                # ("Center lidar", lidar_distances[num_lidar_readings // 2])
                 ("Right-most lidar", lidar_distances[-1]),
+                ("Angular velocity", self.angular_velocity),
                 ("Waypoint Curvature", self.calculate_curvature(waypoints)[0] if self.calculate_curvature(waypoints) else 0)
             ]
 
@@ -360,8 +367,8 @@ class RacetrackEnv(gymnasium.Env):
     
     def get_observation(self):
         waypoints = self.get_waypoints()
-        distance_to_left_boundary, distance_to_right_boundary = self.calculate_distances_to_boundaries()
-        distance_from_center = self.track_width / 2 - min(distance_to_left_boundary, distance_to_right_boundary)
+        self.distance_to_left_boundary, self.distance_to_right_boundary = self.calculate_distances_to_boundaries()
+        distance_from_center = self.track_width / 2 - min(self.distance_to_left_boundary, self.distance_to_right_boundary)
         distance_traveled = self.total_distance
         self.lap_time = self.get_game_time() - self.lap_start_time
         lidar_readings, _ = self.lidar_scan(self.car_x, self.car_y, self.car_angle)  # Get LiDAR readings
@@ -372,7 +379,7 @@ class RacetrackEnv(gymnasium.Env):
 
         return np.array([
             self.car_velocity, 
-            # self.car_angle, 
+            self.angular_velocity,
             distance_traveled,
             distance_from_center, 
             self.lap_time,
@@ -415,7 +422,7 @@ class RacetrackEnv(gymnasium.Env):
         reward += self.car_velocity * 0.1
         # Penalty for being off track
         if not self.check_on_track():
-            reward -= 10  # Large penalty for going off the track
+            reward -= 7  # Large penalty for going off the track
 
         return reward
 

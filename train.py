@@ -1,3 +1,4 @@
+import os
 import gym
 import numpy as np
 from stable_baselines3 import PPO, DQN, A2C, SAC
@@ -5,35 +6,52 @@ from stable_baselines3.common.env_util import make_vec_env
 from racetractEnv import RacetrackEnv  # Ensure your environment file is named racetrack_env.py
 from stable_baselines3.common.env_checker import check_env
 from datatracker import DataTracker
+import torch.nn as nn
 
-def main(agent_policy, num):
-    env = make_vec_env(lambda: RacetrackEnv(render_mode='ai'), n_envs=1)
+def get_latest_num(folder, prefix):
+    """Get the latest number used for saved models or logs."""
+    files = [f for f in os.listdir(folder) if f.startswith(prefix) and f.endswith('.zip')]
+    if not files:
+        return 0
+    numbers = [int(f.split('_')[-1].replace('.zip', '')) for f in files]
+    return max(numbers) + 1
+
+def main(agent_policy, time_steps=100000):
+    models_folder = 'models'
+    logs_folder = 'logs'
+    metrics_folder = 'metrics'
+    os.makedirs(models_folder, exist_ok=True)
+    os.makedirs(logs_folder, exist_ok=True)
+    os.makedirs(metrics_folder, exist_ok=True)
+
+    num = get_latest_num(models_folder, f"{agent_policy.lower()}_racetrack_")
+
+    env = make_vec_env(lambda: RacetrackEnv(render_mode='ai'), n_envs=20)
     datatracker = DataTracker()
     # check_env(env)
 
     if agent_policy == 'A2C':
         model = A2C('MlpPolicy', env, verbose=0, ent_coef=0.01)
     elif agent_policy == 'PPO':
-        model = PPO('MlpPolicy', env, verbose=0, tensorboard_log=f"logs/{agent_policy.lower()}_racetrack_{num}", batch_size=128)
-    elif agent_policy == 'SAC':
+        model = PPO('MlpPolicy', env, verbose=0, tensorboard_log=f"{logs_folder}/{agent_policy.lower()}_racetrack_{num}", batch_size=256)
         model = SAC('MlpPolicy', env, verbose=0)
     else:
-        raise ValueError("Invalid agent policy. Choose from 'DQN', 'A2C', or 'PPO'.")
+        raise ValueError("Invalid agent policy. Choose from 'A2C', 'PPO', or 'SAC'.")
 
     try:
         # Train the model
         if agent_policy == 'PPO':
-            model.learn(total_timesteps=300000, progress_bar=True, callback=datatracker)
+            model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
         elif agent_policy == 'A2C':
-            model.learn(total_timesteps=100000, progress_bar=True, callback=datatracker)
+            model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
         elif agent_policy == 'SAC':
-            model
+            model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
     finally:
         # Save model in models folder
-        model.save(f"models/{agent_policy.lower()}_racetrack_{num}")  # Save with appropriate name based on the agent policy
-        datatracker.save(f"metrics/{agent_policy.lower()}_racetrack_{num}.csv")  # Save the data tracker (optional
+        model.save(f"{models_folder}/{agent_policy.lower()}_racetrack_{num}.zip")  # Save with appropriate name based on the agent policy
+        datatracker.save(f"{metrics_folder}/{agent_policy.lower()}_racetrack_{num}.csv")  # Save the data tracker (optional)
+        print("Model saved to:", f"{models_folder}/{agent_policy.lower()}_racetrack_{num}.zip")
 
 if __name__ == "__main__":
-    agent_policy = 'A2C'  # Change this to 'A2C' or 'PPO' as needed
-    num = 2
-    main(agent_policy, num)
+    agent_policy = 'PPO'  # Change this to 'A2C', 'PPO', or 'SAC' as needed
+    main(agent_policy, time_steps=3000000)

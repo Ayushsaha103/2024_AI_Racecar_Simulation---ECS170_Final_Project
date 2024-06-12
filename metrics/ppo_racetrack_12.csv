@@ -1,0 +1,3 @@
+episode,avg_reward,avg_v,episode_time,distance_traveled,avg_distance_to_left_boundary,avg_distance_to_right_boundary,lidar_readings,shakiness
+1,1.498348192536644,10.84,1.321,1.6077747e-13,15.50125066825769,24.721730223970408,"[ 18.144194  23.24672   45.67691  108.08929  133.42085   67.25564
+  39.7384    30.124966]",30.935642889066123

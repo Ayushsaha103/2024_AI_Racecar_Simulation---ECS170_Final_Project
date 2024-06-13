@@ -102,4 +102,4 @@ def plot_data(algorithm_type, number=-1):
     
 
 # Example usage:
-plot_data('A2C', number=4)
+plot_data('DQN', number=2)

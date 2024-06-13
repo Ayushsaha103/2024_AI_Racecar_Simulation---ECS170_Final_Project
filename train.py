@@ -26,7 +26,11 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
 
     num = get_latest_num(models_folder, f"{agent_policy.lower()}_racetrack_")
 
-    env = make_vec_env(lambda: RacetrackEnv(render_mode='ai'), n_envs=1)
+    if agent_policy == 'DQN':
+        env = make_vec_env(lambda: RacetrackEnv(render_mode='ai', action_space_type='discrete'), n_envs=1)
+    else:
+        env = make_vec_env(lambda: RacetrackEnv(render_mode='ai'), n_envs=1)
+
     datatracker = DataTracker()
     # check_env(env)
 
@@ -47,6 +51,8 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
         elif agent_policy == 'PPO':
             #  n_steps = 10240
             model = PPO('MlpPolicy', env, verbose=0, tensorboard_log=f"{logs_folder}/{agent_policy.lower()}_racetrack_{num}", learning_rate=0.0001, batch_size=128)
+        elif agent_policy == 'DQN':
+            model = DQN('MlpPolicy', env, verbose=0, tensorboard_log=f"{logs_folder}/{agent_policy.lower()}_racetrack_{num}")
         else:
             raise ValueError("Invalid agent policy. Choose from 'A2C', 'PPO', or 'SAC'.")
 
@@ -58,6 +64,8 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
             model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
         elif agent_policy == 'SAC':
             model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
+        elif agent_policy == 'DQN':
+            model.learn(total_timesteps=time_steps, progress_bar=True, callback=datatracker)
     finally:
         # Save model in models folder
         model.save(f"{models_folder}/{agent_policy.lower()}_racetrack_{num}.zip")  # Save with appropriate name based on the agent policy
@@ -65,5 +73,5 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
         print("Model saved to:", f"{models_folder}/{agent_policy.lower()}_racetrack_{num}.zip")
 
 if __name__ == "__main__":
-    agent_policy = 'A2C'  # Change this to 'A2C', 'PPO', or 'SAC' as needed
-    train(agent_policy, time_steps=100000, load_model=False, model_num=-1)
+    agent_policy = 'DQN'  # Change this to 'A2C', 'PPO', or 'SAC' as needed
+    train(agent_policy, time_steps=150000, load_model=False, model_num=-1)

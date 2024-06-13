@@ -53,8 +53,17 @@ observation_space = spaces.Box(
     dtype=np.float32
 )
 
+# Define the mapping from discrete actions to (steering, acceleration)
+DISCRETE_ACTIONS = {
+    0: (0, 0),     # no change
+    1: (-0.5, 0),  # steer left
+    2: (0.5, 0),   # steer right
+    3: (0, 0.5),   # accelerate
+    4: (0, -0.5),  # brake
+}
+
 class RacetrackEnv(gymnasium.Env):
-    def __init__(self, track_length=1000, track_width=40, num_curves=20, max_curvature=0.12, track_number=random.randint(0,1000), render_mode='human'):
+    def __init__(self, track_length=1000, track_width=40, num_curves=20, max_curvature=0.12, track_number=random.randint(0,1000), render_mode='human', action_space_type='continuous'):
         super(RacetrackEnv, self).__init__()
         self.track_length = track_length
         self.track_width = track_width
@@ -62,6 +71,7 @@ class RacetrackEnv(gymnasium.Env):
         self.max_curvature = max_curvature
         self.track_number = track_number
         self.render_mode = render_mode
+        self.action_space_type = action_space_type
 
         pygame.init()
         self.clock = None
@@ -71,8 +81,10 @@ class RacetrackEnv(gymnasium.Env):
         self.track = generator.generate_racetrack(self.track_length, self.track_width, self.num_curves, self.max_curvature, self.track_number)
         self.x_fine, self.y_fine, self.left_boundary_x, self.left_boundary_y, self.right_boundary_x, self.right_boundary_y = self.track
 
-        # Continuous action space: [steering, acceleration]
-        self.action_space = spaces.Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)
+        if self.action_space_type == 'continuous':
+            self.action_space = spaces.Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)
+        elif self.action_space_type == 'discrete':
+            self.action_space = spaces.Discrete(len(DISCRETE_ACTIONS))
 
         self.observation_space = observation_space
         self.car = pygame.image.load('car_sprite.png')  # Make sure 'car_sprite.png' exists
@@ -157,11 +169,14 @@ class RacetrackEnv(gymnasium.Env):
         return self.spatial_grid
 
     def step(self, action):
-        self.current_action = action
-        steering, velocity = action
+        if self.action_space_type == 'discrete':
+            steering, velocity = DISCRETE_ACTIONS[action]
+        else:
+            steering, velocity = action
+
+        self.current_action = np.array([steering, velocity], dtype=np.float32)
         self.car_velocity = np.clip(self.car_velocity + velocity, MIN_VELOCITY, MAX_VELOCITY)
         self.car_angle = (self.car_angle + steering * 20) % 360
-
 
         self.angular_velocity = (self.car_angle - self.prev_car_angle) / self.get_game_time() if self.get_game_time() > 0 else 0
         self.prev_car_angle = self.car_angle
@@ -184,7 +199,6 @@ class RacetrackEnv(gymnasium.Env):
         self.reward = self.calculate_reward()
         terminated = self.lap_count == 3  # End the episode after 3 laps
         truncated = not self.check_on_track()
-        # done = terminated or truncated
         info = {}
 
         # Check if the car has completed a lap
@@ -276,7 +290,6 @@ class RacetrackEnv(gymnasium.Env):
                 if event.type == QUIT:
                     pygame.quit()
                     quit()
-        
 
     def lidar_scan(self, car_x, car_y, car_angle):
         beam_length = lidar_max
@@ -416,8 +429,6 @@ class RacetrackEnv(gymnasium.Env):
 
         # Progress reward
         progress_reward = self.total_distance - self.previous_waypoint_index
-        # Check if the car is moving forward, and reward it 1 point at each waypoint
-        # progress_reward = 1 if self.total_distance > self.previous_waypoint_index else 0
 
         # make sure progress reward is positive
         if progress_reward < 0:
@@ -441,7 +452,6 @@ class RacetrackEnv(gymnasium.Env):
             lap_completion_reward = 1000 / max(self.lap_time, 1e-4)  # Large reward for quick lap completion
 
         no_movement_penalty = -10 if abs(self.car_velocity) < 0.1 else 0  # Apply penalty if the car's velocity is very low
-
 
         if (self.render_mode == 'human'):
             # Print rewards and penalties
@@ -511,7 +521,6 @@ class RacetrackEnv(gymnasium.Env):
             curvature = angle / np.linalg.norm(v2)
             curvatures.append(curvature)
         return curvatures
-
 
     def calculate_distances_to_boundaries(self):
         # Calculate the distances from the car to the left and right boundaries

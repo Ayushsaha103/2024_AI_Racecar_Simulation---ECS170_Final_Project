@@ -409,29 +409,6 @@ class RacetrackEnv(gymnasium.Env):
             )
             self.previous_waypoint_index = nearest_waypoint_index
 
-    
-    # def calculate_reward(self):
-    #     """Calculate reward based on the distance traveled, speed, and staying on the track."""
-    #     reward = 0
-    #     # Reward for low velocity / no movement
-    #     if self.car_velocity < 0.1:
-    #         reward -= 4
-
-    #     # Reward for moving forward
-    #     reward += self.total_distance * 0.1
-    #     # Speed reward (higher speed gets a higher reward)
-    #     reward += self.car_velocity * 0.05
-
-    #     # Reward for staying near the center of the track
-    #     distance_from_center = self.track_width / 2 - min(self.distance_to_left_boundary, self.distance_to_right_boundary)
-    #     reward += distance_from_center * 0.1
-
-    #     # Penalty for being off track
-    #     if not self.check_on_track():
-    #         reward -= 7  # Large penalty for going off the track
-
-    #     return reward
-
     def calculate_reward(self):
         # Penalize being off-track
         if not self.check_on_track():

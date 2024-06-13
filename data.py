@@ -61,7 +61,6 @@ def plot_data(algorithm_type, number=-1):
     plt.savefig(os.path.join(output_folder, f'{algorithm_type}_{number}_lidar_vs_distance.png'))
     plt.close()
     
-    
     # Heatmap: Correlation Matrix of Metrics
     plt.figure(figsize=(10, 8))
     corr = data.drop(columns=['lidar_readings']).corr()  # Drop the lidar_readings column for correlation matrix
@@ -69,7 +68,38 @@ def plot_data(algorithm_type, number=-1):
     plt.title('Correlation Matrix of Metrics')
     plt.savefig(os.path.join(output_folder, f'{algorithm_type}_{number}_correlation_matrix.png'))
     plt.close()
-
+    
+    # Line Plot: Average Velocity Over Episodes
+    plt.figure(figsize=(10, 5))
+    plt.plot(data['episode'], data['avg_v'], label='Average Velocity')
+    sns.regplot(x='episode', y='avg_v', data=data, scatter=False, label='Trend Line', color='orange')
+    plt.xlabel('Episode')
+    plt.ylabel('Average Velocity')
+    plt.title('Average Velocity Over Episodes')
+    plt.legend()
+    plt.savefig(os.path.join(output_folder, f'{algorithm_type}_{number}_avg_velocity_over_episodes.png'))
+    plt.close()
+    
+    # Histogram: Distribution of Rewards
+    plt.figure(figsize=(10, 5))
+    sns.histplot(data['avg_reward'], bins=20, kde=True)
+    plt.xlabel('Average Reward')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of Rewards')
+    plt.savefig(os.path.join(output_folder, f'{algorithm_type}_{number}_reward_distribution.png'))
+    plt.close()
+    
+    # Line Plot: Shakiness Over Episodes
+    plt.figure(figsize=(10, 5))
+    plt.plot(data['episode'], data['shakiness'], label='Shakiness')
+    sns.regplot(x='episode', y='shakiness', data=data, scatter=False, label='Trend Line', color='orange')
+    plt.xlabel('Episode')
+    plt.ylabel('Shakiness')
+    plt.title('Shakiness Over Episodes')
+    plt.legend()
+    plt.savefig(os.path.join(output_folder, f'{algorithm_type}_{number}_shakiness_over_episodes.png'))
+    plt.close()
+    
 
 # Example usage:
-plot_data('PPO', number=46)
+plot_data('A2C', number=4)

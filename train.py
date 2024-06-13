@@ -43,7 +43,7 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
     else:
         print("Training model...")
         if agent_policy == 'A2C':
-            model = A2C('MlpPolicy', env, verbose=0, ent_coef=0.01)
+            model = A2C('MlpPolicy', env, verbose=0, tensorboard_log=f"{logs_folder}/{agent_policy.lower()}_racetrack_{num}", learning_rate=0.0007, n_steps=10)
         elif agent_policy == 'PPO':
             #  n_steps = 10240
             model = PPO('MlpPolicy', env, verbose=0, tensorboard_log=f"{logs_folder}/{agent_policy.lower()}_racetrack_{num}", learning_rate=0.0001, batch_size=128)
@@ -65,5 +65,5 @@ def train(agent_policy, time_steps=100000, load_model=False, model_num=-1):
         print("Model saved to:", f"{models_folder}/{agent_policy.lower()}_racetrack_{num}.zip")
 
 if __name__ == "__main__":
-    agent_policy = 'PPO'  # Change this to 'A2C', 'PPO', or 'SAC' as needed
+    agent_policy = 'A2C'  # Change this to 'A2C', 'PPO', or 'SAC' as needed
     train(agent_policy, time_steps=100000, load_model=False, model_num=-1)

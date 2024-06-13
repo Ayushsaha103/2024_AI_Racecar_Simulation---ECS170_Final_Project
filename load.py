@@ -34,11 +34,11 @@ def load_model(algo, num = -1):
 
     print("Loaded model from:", f"models/{algo.lower()}_racetrack_{num}.zip")
     while True:
-        action, _states = model.predict(obs, deterministic=True)
+        action, _states = model.predict(obs, deterministic=False)
         obs, rewards, dones, info = env.step(action)
         env.render()
         if np.any(dones):
             obs = env.reset()
 
 if __name__ == "__main__":
-    load_model(algo='PPO', num=-1)
+    load_model(algo='A2C', num=-1)

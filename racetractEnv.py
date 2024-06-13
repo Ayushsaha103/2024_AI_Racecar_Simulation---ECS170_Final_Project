@@ -11,7 +11,7 @@ import random
 # Constants
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-MAX_VELOCITY = 5
+MAX_VELOCITY = 12
 MIN_VELOCITY = 0
 FRICTION = 0.0
 
@@ -439,6 +439,8 @@ class RacetrackEnv(gymnasium.Env):
 
         # Progress reward
         progress_reward = self.total_distance - self.previous_waypoint_index
+        # Check if the car is moving forward, and reward it 1 point at each waypoint
+        # progress_reward = 1 if self.total_distance > self.previous_waypoint_index else 0
 
         # make sure progress reward is positive
         if progress_reward < 0:
@@ -464,15 +466,17 @@ class RacetrackEnv(gymnasium.Env):
         no_movement_penalty = -10 if abs(self.car_velocity) < 0.1 else 0  # Apply penalty if the car's velocity is very low
 
 
-        # # Print rewards and penalties
-        # print(f"Progress reward: {progress_reward:.2f}")
-        # print(f"Centerline penalty: {centerline_penalty:.2f}")
-        # print(f"Speed reward: {speed_reward:.2f}")
-        # print(f"Smoothness penalty: {smoothness_penalty:.2f}")
-        # print(f"Lap completion reward: {lap_completion_reward:.2f}")
+        if (self.render_mode == 'human'):
+            # Print rewards and penalties
+            print(f"Progress reward: {progress_reward:.2f}")
+            print(f"Centerline penalty: {centerline_penalty:.2f}")
+            print(f"Speed reward: {speed_reward:.2f}")
+            print(f"Smoothness penalty: {smoothness_penalty:.2f}")
+            print(f"Lap completion reward: {lap_completion_reward:.2f}")
+            print(f"No movement penalty: {no_movement_penalty:.2f}")
 
         # Aggregate reward
-        reward = (progress_reward * 0.5 +
+        reward = (progress_reward * 0.025 +
                 speed_reward * 0.3 -
                 centerline_penalty * 0.2 -
                 smoothness_penalty * 0.1 +
@@ -506,7 +510,7 @@ class RacetrackEnv(gymnasium.Env):
         """Get current game time in seconds."""
         return pygame.time.get_ticks() / 1000  # Convert milliseconds to seconds
 
-    def get_waypoints(self, num_waypoints=10, closeness=2):
+    def get_waypoints(self, num_waypoints=10, closeness=3):
         waypoints = []
         car_index = np.argmin((np.array(self.x_fine) - self.car_x) ** 2 + (np.array(self.y_fine) - self.car_y) ** 2)
         for i in range(1, num_waypoints + 1):
